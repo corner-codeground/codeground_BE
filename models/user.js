@@ -1,5 +1,6 @@
 const Sequelize = require('sequelize');
 const bcrypt = require('bcryptjs');
+const Follow = require('./follow.js');
 
 class User extends Sequelize.Model {
   static initiate(sequelize) {
@@ -39,6 +40,20 @@ class User extends Sequelize.Model {
     });
   }
 
+  static associate(db) {
+    // Follow 모델과 User 모델 간의 관계 정의
+    Follow.belongsTo(db.User, {
+      foreignKey: 'followingId',
+      targetKey: 'id',
+      as: 'Following', // 팔로우하는 사람
+    });
+
+    Follow.belongsTo(db.User, {
+      foreignKey: 'followerId',
+      targetKey: 'id',
+      as: 'Follower', // 팔로우 당하는 사람
+    });
+  }
   // static associate(db) {
   //   db.User.hasMany(db.Post);
   //   db.User.belongsToMany(db.User, {

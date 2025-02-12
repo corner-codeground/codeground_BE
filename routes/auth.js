@@ -2,6 +2,7 @@ const express = require("express");
 const passport = require("passport");
 const bcrypt = require("bcrypt");
 const User = require("../models/user");
+const Follow = require("../models/follow");
 
 const router = express.Router();
 
@@ -61,7 +62,15 @@ router.get('/profile', async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });    
     }
-    res.render('profile', { user }); ///////////
+    // 팔로잉, 팔로워 수 조회 추가
+    const followersCount = await Follow.count({
+      where: { following_id: req.user.id },
+    });
+    const followingsCount = await Follow.count({
+      where: { follower_id: req.user.id },
+    });
+
+    res.render('profile', { user, followersCount, followingsCount }); 
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "오류" });
@@ -147,26 +156,6 @@ router.post('/account', async (req, res) => {
     res.status(500).json({ message: "수정 중 오류 발생" });
   }
 })
-
-// // 계정 관리 수정 페이지 
-// router.post('/account/edit', async (req, res) => {
-//   if (!req.user) {
-//     return res.redirect('/auth/login'); // 로그인 안 된 경우
-//   }
-//   try {
-//     const user = await User.findByPk(req.user.id, {
-//       attributes: ["email", "username"], // 표시할 사용자 정보
-//     });
-//     if (!user) {
-//       return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });    
-//     }
-//     res.render('account', { user }); 
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ message: "오류" });
-//   }
-// })
-
 
 // 계정 탈퇴 처리
 router.delete("/account/delete", async (req, res) => {
