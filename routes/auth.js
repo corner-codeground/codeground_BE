@@ -1,179 +1,159 @@
 const express = require("express");
 const passport = require("passport");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken"); 
 const User = require("../models/user");
 const Follow = require("../models/follow");
-const { isLoggedIn, isNotLoggedIn } = require('../middleware/authMiddleware'); // auth 미들웨어 분리 추가
+const { isLoggedIn, isNotLoggedIn } = require("../middleware/authMiddleware"); 
+const upload = require("../middleware/upload");
 
 const router = express.Router();
 
-// 로그인 페이지
-router.get("/login", isNotLoggedIn/*추가*/, (req, res) => {
-  res.render("login");
-});
-// 로그인 처리
-router.post("/login", isNotLoggedIn/*추가*/, passport.authenticate("local", {
-  successRedirect: "/auth/profile", 
-  failureRedirect: "/auth/login", // 오류 띄워줘야 할 듯
-}), (req, res) => {
-  console.log(req.user); /////////
-}
-);
-
-// 회원가입 페이지
-router.get("/join", isNotLoggedIn/*추가*/, (req, res) => {
-  res.render("join");
-});
-// 회원가입 처리
-router.post("/join", isNotLoggedIn/*추가*/, async (req, res) => {
+// 회원가입 처리 ok
+router.post("/join", isNotLoggedIn, async (req, res) => {
   const { username, email, password, confirmPassword } = req.body;
   if (password !== confirmPassword) return res.status(400).send('비밀번호가 일치하지 않습니다.'); // 비밀번호 일치 확인 추가
-
   try {
-    //추가
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
       return res.status(400).send('이미 등록된 이메일입니다.');
     }
-
     const hash = await bcrypt.hash(password, 10);
     await User.create({ username, email, password: hash });
-    res.redirect("/auth/login");
+    res.status(500).json({ message: "회원가입 성공" });
   } catch(err) {
     console.error('회원가입 실패:', err);
     res.status(500).send('회원가입 실패');
   }
 });
 
-// 프로필 페이지 (마이 페이지)
-router.get('/profile', isLoggedIn/*추가*/, async (req, res) => {
-  console.log(req.user); 
-  if (!req.user) {
-    return res.redirect('/auth/login'); // 로그인 안 된 경우
-  }
+// 로그인 처리 ok
+router.post("/login", isNotLoggedIn, async (req, res) => {
+  const { email, password } = req.body;
   try {
-    const user = await User.findByPk(req.user.id, {
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      return res.status(401).json({ message: "잘못된 이메일 또는 비밀번호입니다." });
+    }
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: "잘못된 사용자명 또는 비밀번호입니다." });
+    }
+    // JWT 토큰 생성
+    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+
+    res.json({ message: "로그인 성공", token, user }); 
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "서버 오류" });
+  }
+});
+
+// /profile, /profile/:id 에서 프로필 조회 공통 로직
+async function renderProfile(req, res, userId) {
+  try {
+    const currentUser = await User.findByPk(userId, {
       attributes: ["username", "bio", "profileImage"],
     });
-    if (!user) {
-      return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });    
+    
+    if (!currentUser) {
+      return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
     }
-    // 팔로잉, 팔로워 수 조회 추가
     const followersCount = await Follow.count({
-      where: { following_id: req.user.id },
+      where: { following_id: userId },
     });
     const followingsCount = await Follow.count({
-      where: { follower_id: req.user.id },
+      where: { follower_id: userId },
     });
 
-    res.render('profile', { user, followersCount, followingsCount }); 
+    const isOwnProfile = req.user && req.user.id === Number(userId);
+
+    res.json({
+      user: currentUser,
+      followersCount, 
+      followingsCount, 
+      currentUser, 
+      isOwnProfile,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "오류" });
   }
-  });
+}
 
-// 프로필 수정 페이지
-router.get('/profile/edit', isLoggedIn/*추가*/, async (req, res) => {
+// 프로필 조회 ok
+router.get("/profile", isLoggedIn, async (req, res) => {
+  console.log(req.user); 
+  if (!req.user) {
+    return res.status(401).json({ message: "로그인이 필요합니다." }); // 로그인 안 된 경우
+  }
+  await renderProfile(req, res, req.user.id);
+  // try {
+  //   const user = await User.findByPk(req.user.id, { attributes: ["username", "bio", "profileImage"] });
+  //   if (!user) return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
+
+  //   const followersCount = await Follow.count({ where: { following_id: req.user.id } });
+  //   const followingsCount = await Follow.count({ where: { follower_id: req.user.id } });
+
+  //   res.json({ user, followersCount, followingsCount });
+  // } catch (err) {
+  //   console.error(err);
+  //   res.status(500).json({ message: "서버 오류" });
+  // }
+});
+
+// 프로필 조회 (다른 사용자 프로필) ok
+router.get('/profile/:id', isLoggedIn, async (req, res) => {
+  const { id } = req.params;
+  await renderProfile(req, res, id); // 특정 사용자 id를 전달하여 프로필 조회
+});
+
+// 계정 관리 조회 ok
+router.get("/account", isLoggedIn, async (req, res) => {
   try {
-    const user = await User.findByPk(req.user.id, {
-      attributes: ["username", "bio", "profileImage"], 
-    });
-    
-    if (!user) {
-      return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
-    }
-
-    res.render('editProfile', { user }); // 프로필 수정 페이지로 전달할 사용자 정보
+    const user = await User.findByPk(req.user.id, { attributes: ["profileImage", "email", "username", /*추가*/"password", "darkMode"] });
+    if (!user) return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
+    res.json({ user }); 
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "서버 오류" });
   }
 });
 
-// 프로필 페이지에 프로필 수정
-router.post("/profile/edit", isLoggedIn/*추가*/, async (req, res) => {
-  const { bio, profileImage } = req.body;
+// 계정 정보 수정 ok
+router.post("/account", isLoggedIn, upload.single("profileImage")/*추가*/, async (req, res) => {
+  const { /*변경*/email, username, password, darkMode } = req.body;
   try {
     const user = await User.findByPk(req.user.id);
-    if (!user) {
-      return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
-    }
-    // 정보 수정
-    const updateData = {};
-    if (bio) updateData.bio = bio;
-    if (profileImage) updateData.profileImage = profileImage;
-    await user.update(updateData);
-    res.redirect('/auth/profile');
-  } catch (err) {
-    res.status(500).json({ message: "오류" });
+    if (!user) return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
+
+    const profileImage = req.file ? req.file.path : user.profileImage; // 프로필 사진이 업로드되었으면 새 파일 경로를 사용하고, 아니면 기존의 프로필 이미지 경로를 사용
+
+    await user.update({ profileImage, email, username, password, darkMode });
+    res.json({ message: "계정 정보 수정 완료", user }); 
+  } catch (err) { 
+    console.error(err);
+    res.status(500).json({ message: "서버 오류" });
   }
 });
 
-// 계정 관리 페이지
-router.get('/account', isLoggedIn/*추가*/, async (req, res) => {
-  if (!req.user) {
-    return res.redirect('/auth/login'); // 로그인 안 된 경우
-  }
-  try {
-    const user = await User.findByPk(req.user.id, {
-      attributes: ["email", "username"],
-    });
-    if (!user) {
-      return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });    
-    }
-    res.render('account', { user }); 
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "오류" });
-  }
-})
-
-
-// 계정 관리 (수정)
-router.post('/account', isLoggedIn/*추가*/, async (req, res) => {
-  const { username, email } = req.body;
+// 계정 탈퇴 ok
+router.delete("/account/delete", isLoggedIn, async (req, res) => {
   try {
     const user = await User.findByPk(req.user.id);
-    if (!user) {
-      return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
-    }
+    if (!user) return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
 
-    // 정보 업데이트
-    const updateData = {};
-    if (username) updateData.username = username;
-    if (email) updateData.email = email;
-
-    await user.update(updateData);
-    res.redirect('/auth/account');  // 수정 후 다시 리다이렉트
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "수정 중 오류 발생" });
-  }
-})
-
-// 계정 탈퇴 처리
-router.delete("/account/delete", isLoggedIn/*추가*/, async (req, res) => {
-  try {
-    const user = await User.findByPk(req.user.id);
-    if (!user) {
-      return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
-    }
     await user.destroy();
-    res.redirect("/");
-
+    res.json({ message: "계정 탈퇴 완료", user });
   } catch (err) {
-    console.error("계정 삭제 중 오류 발생", err);
-    res.status(500).json({ message: "계정 삭제 중 오류 발생" });
+    console.error("계정 탈퇴 중 오류 발생", err);
+    res.status(500).json({ message: "계정 탈퇴 중 오류 발생" });
   }
 });
 
-// 로그아웃 처리
-router.get('/logout', isLoggedIn/*추가*/, (req, res) => {
-  req.logout((err) => {
-    if (err) return next(err);
-    res.redirect('/');  // 로그아웃 후 홈 화면으로 리다이렉트
-  });
+// 로그아웃 
+router.post("/logout", (req, res) => {
+    res.json({ message: "로그아웃 완료" });
 });
 
 module.exports = router;

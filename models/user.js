@@ -28,6 +28,11 @@ class User extends Sequelize.Model {
         allowNull: true,
         defaultValue: '한 줄 소개가 없습니다.',
       },
+      darkmode: { // 추가
+        type: Sequelize.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      }
     }, {
       sequelize,
       timestamps: true,
