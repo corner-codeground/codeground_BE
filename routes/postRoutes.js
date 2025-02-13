@@ -6,7 +6,7 @@ const postController = require("../controllers/postController"); // ✅ 컨트�
 router.post("/", postController.createPost);
 
 // 📌 2️⃣ 특정 게시글 조회
-router.get("/:id", postController.getPostById);
+router.get("/:id", postController.getPostById);  // ✅ undefined 해결됨!
 
 // 📌 3️⃣ 전체 게시글 조회
 router.get("/", postController.getAllPosts);
