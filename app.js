@@ -12,6 +12,7 @@ const commentRouter = require("./routes/route_comment");
 const likeRouter = require("./routes/route_like");
 const scrapRouter = require('./routes/route_scrap');
 const followRouter = require('./routes/route_follow');
+const runCodeRouter = require('./routes/route_runCode');
 
 dotenv.config(); // 추가
 const app = express();
@@ -56,6 +57,7 @@ app.use('/comment', commentRouter);
 app.use('/likes', likeRouter);
 app.use('/scraps', scrapRouter);
 app.use('/follow', followRouter);
+app.use('/runCodes', runCodeRouter);
 
 
 // 홈 화면
