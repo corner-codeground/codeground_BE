@@ -17,10 +17,6 @@ class Post extends Sequelize.Model {
           allowNull: false,
           defaultValue: true,
         },
-        user_id: { // ✅ 추가 (VARCHAR 형태로 저장)
-          type: Sequelize.STRING(50),
-          allowNull: false,
-        },
         created_at: {
           type: Sequelize.DATE,
           allowNull: false,
@@ -52,14 +48,14 @@ class Post extends Sequelize.Model {
       onDelete: "CASCADE",
     });
 
-    if (db.Hashtag) {
-      db.Post.belongsToMany(db.Hashtag, {
-        through: "PostHashtag",
-        foreignKey: "post_id",
-        onDelete: "CASCADE",
-      });
+    if(db.Hashtag){
+        db.Post.belongsToMany(db.Hashtag, {
+            through:"PostHashtag",
+            foreignKey:"post_id",
+            onDelete:"CASCADE",
+        });
     } else {
-      console.error("Hashtag 모델이 존재하지 않습니다.");
+        console.error("Hashtag 모델이 존재하지 않습니다.");
     }
   }
 }

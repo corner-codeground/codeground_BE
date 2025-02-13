@@ -1,23 +1,24 @@
 const db = require("../models");
-
-// 📌 1️⃣ 게시글 생성
 const createPost = async (req, res) => {
-    const { title, content, is_public, user_id, hashtags } = req.body;
-
-    if (!title || !content || !user_id || !hashtags || hashtags.length === 0) {
-        return res.status(400).json({ message: "제목, 내용, 해시태그는 필수 입력 항목입니다." });
-    }
-
     try {
+        const user_id=req.user.id;
+        const { title, content, is_public, hashtags } = req.body;
+
+        if (!title || !content || !user_id || !hashtags || hashtags.length === 0) {
+            return res.status(400).json({ message: "제목, 내용, 해시태그는 필수 입력 항목입니다." });
+        }
+
         console.log("✅ [게시글 생성] 요청된 user_id:", user_id);
 
+        // ✅ 2️⃣ 게시글 생성
         const newPost = await db.Post.create({ 
             title, 
             content, 
             is_public, 
-            user_id: String(user_id)  // ✅ user_id를 문자열로 변환하여 저장 (VARCHAR 대응)
+            user_id
         });
 
+        // ✅ 3️⃣ 해시태그 연결
         if (hashtags.length > 0) {
             const tagInstances = await Promise.all(
                 hashtags.map(tag => db.Hashtag.findOrCreate({ where: { tag } }))
@@ -28,7 +29,7 @@ const createPost = async (req, res) => {
         res.status(201).json({ message: "게시글이 등록되었습니다.", post: newPost });
     } catch (err) {
         console.error("게시글 생성 오류:", err);
-        res.status(500).json({ message: "서버 오류" });
+        res.status(500).json({ message: "서버 내부 오류 발생", error: err.toString() });
     }
 };
 
@@ -133,7 +134,7 @@ const deletePost = async (req, res) => {
     }
 };
 
-// ✅ module.exports에 모든 함수 추가 확인!!
+// ✅ module.exports 추가!
 module.exports = {
     createPost,
     getPostById,
