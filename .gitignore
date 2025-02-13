@@ -148,5 +148,5 @@ migrations/
 
 # 환경 설정 파일 (절대 올리면 안 됨)
 .env
-config/*.json
+config/.json
 config/*.yml
