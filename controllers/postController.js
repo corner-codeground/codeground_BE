@@ -1,7 +1,7 @@
 const { Op } = require("sequelize");
 const db = require("../models");
-const multer=require("multer");
-const path=require("path");
+const multer = require("multer");
+const path = require("path");
 const fs = require("fs");
 
 // 📌 이미지 업로드 설정 (multer 사용)
@@ -97,7 +97,6 @@ const getAllPosts = async (req, res) => {
     }
 };
 
-
 // 📌 4️⃣ 게시글 검색 (부분 일치 검색)
 const searchPosts = async (req, res) => {
     try {
@@ -120,14 +119,13 @@ const searchPosts = async (req, res) => {
                 { model: db.User, attributes: ["id", "username"] },
                 {
                     model: db.Hashtag,
-                    where: { tag: { [Op.like]: `%${keyword}%` } }, // 해시태그 검색 추가
+                    where: { tag: { [Op.like]: `%${keyword}%` } },
                     required: false
                 }
             ],
             order: [["createdAt", "DESC"]]
         });
 
-        // ✅ 검색 결과가 없을 경우 빈 배열 반환
         return res.json(posts);
     } catch (err) {
         console.error("게시글 검색 오류:", err);
@@ -138,7 +136,7 @@ const searchPosts = async (req, res) => {
 // 📌 5️⃣ 게시글 수정 (로그인 필요)
 const updatePost = async (req, res) => {
     const { id } = req.params;
-    const { title, content, is_public, hashtags } = req.body;
+    const { title, content, is_public, hashtags, removeImage } = req.body;
     const user_id = req.user.id;
 
     try {
@@ -153,28 +151,22 @@ const updatePost = async (req, res) => {
 
         let newImageUrl = post.image_url;
 
-        // ✅ 기존 이미지 삭제 요청이 있는 경우
-        if (removeImage === "true"&&post.image_url) {
-            const imagePath=path.join(__dirname, "..", post.image_url);
-            if (fs.existsSync(imagePath)) {
-                fs.unlinkSync(imagePath);
-            }
+        // ✅ 기존 이미지 삭제 (removeImage 값이 true이면 삭제)
+        if (removeImage === "true" && post.image_url) {
+            deleteImage(`.${post.image_url}`);
             newImageUrl = null;
         }
 
-        // ✅ 새로운 이미지 업로드된 경우
+        // ✅ 새로운 이미지 업로드 시 기존 이미지 삭제 후 새 이미지 저장
         if (req.file) {
             if (post.image_url) {
-                const imagePath = path.join(__dirname, "..", post.image_url);
-                if (fs.existsSync(imagePath)) {
-                    fs.unlinkSync(imagePath);
-                }
+                deleteImage(`.${post.image_url}`);
             }
             newImageUrl = `/uploads/${req.file.filename}`;
         }
 
-        await post.update({ title, content, is_public, image_url:newImageUrl });
-        
+        await post.update({ title, content, is_public, image_url: newImageUrl });
+
         if (hashtags && hashtags.length > 0) {
             const tagInstances = await Promise.all(
                 hashtags.map(tag => db.Hashtag.findOrCreate({ where: { tag } }))

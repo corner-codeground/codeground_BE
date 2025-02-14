@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>게시글 API 테스트</title>
+</head>
+<body>
+    <h1>🔐 로그인 & 게시글 API 테스트</h1>
+
+    <h2>👤 회원가입</h2>
+    <input type="text" id="registerUsername" placeholder="아이디"><br>
+    <input type="email" id="registerEmail" placeholder="이메일"><br>
+    <input type="password" id="registerPassword" placeholder="비밀번호"><br>
+    <button onclick="register()">회원가입</button>
+
+    <h2>🔑 로그인</h2>
+    <input type="email" id="loginEmail" placeholder="이메일"><br>
+    <input type="password" id="loginPassword" placeholder="비밀번호"><br>
+    <button onclick="login()">로그인</button>
+    <p id="loginStatus"></p>
+
+    <h2>📝 게시글 작성</h2>
+    <input type="text" id="title" placeholder="제목"><br>
+    <textarea id="content" placeholder="내용"></textarea><br>
+    <input type="text" id="hashtags" placeholder="해시태그 (쉼표로 구분)"><br>
+    <input type="file" id="image"><br>
+    <button onclick="createPost()">게시글 작성</button>
+
+    <h2>📋 게시글 목록 조회</h2>
+    <button onclick="getAllPosts()">모든 게시글 가져오기</button>
+    <ul id="postList"></ul>
+
+    <h2>🔍 게시글 검색</h2>
+    <input type="text" id="searchKeyword" placeholder="검색어 입력">
+    <button onclick="searchPosts()">검색</button>
+    <ul id="searchResults"></ul>
+
+    <h2>📝 특정 게시글 조회</h2>
+    <input type="text" id="postId" placeholder="게시글 ID">
+    <button onclick="getPostById()">조회</button>
+    <div id="postDetail"></div>
+
+    <h2>✏️ 게시글 수정</h2>
+    <input type="text" id="editId" placeholder="수정할 게시글 ID"><br>
+    <input type="text" id="editTitle" placeholder="새 제목"><br>
+    <textarea id="editContent" placeholder="새 내용"></textarea><br>
+    <input type="file" id="editImage"><br>
+    <label><input type="checkbox" id="removeImage"> 기존 이미지 삭제</label><br>
+    <button onclick="updatePost()">수정</button>
+
+    <h2>🗑 게시글 삭제</h2>
+    <input type="text" id="deleteId" placeholder="삭제할 게시글 ID">
+    <button onclick="deletePost()">삭제</button>
+
+    <script>
+        const API_BASE_URL = "http://localhost:5000"; // 백엔드 API 주소
+
+        function setToken(token) { localStorage.setItem("jwt", token); }
+        function getToken() { return localStorage.getItem("jwt"); }
+
+        async function register() {
+            const username = document.getElementById("registerUsername").value;
+            const email = document.getElementById("registerEmail").value;
+            const password = document.getElementById("registerPassword").value;
+
+            const response = await fetch(`${API_BASE_URL}/auth/join`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username, email, password })
+            });
+
+            alert((await response.json()).message);
+        }
+
+        async function login() {
+            const email = document.getElementById("loginEmail").value;
+            const password = document.getElementById("loginPassword").value;
+
+            const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password })
+            });
+
+            const result = await response.json();
+            if (result.token) {
+                setToken(result.token);
+                document.getElementById("loginStatus").innerText = "✅ 로그인 성공!";
+            } else {
+                document.getElementById("loginStatus").innerText = "❌ 로그인 실패!";
+            }
+        }
+
+        async function createPost() {
+            if (!getToken()) return alert("로그인이 필요합니다.");
+
+            const formData = new FormData();
+            formData.append("title", document.getElementById("title").value);
+            formData.append("content", document.getElementById("content").value);
+            formData.append("hashtags", JSON.stringify(document.getElementById("hashtags").value.split(",")));
+            const image = document.getElementById("image").files[0];
+            if (image) formData.append("image", image);
+
+            const response = await fetch(`${API_BASE_URL}/posts`, {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${getToken()}` },
+                body: formData
+            });
+
+            alert((await response.json()).message);
+        }
+
+        async function getAllPosts() {
+            const response = await fetch(`${API_BASE_URL}/posts`);
+            const posts = await response.json();
+            document.getElementById("postList").innerHTML = posts.map(post =>
+                `<li>${post.id}: ${post.title} <img src="${post.image_url}" width="100"></li>`).join("");
+        }
+
+        async function getPostById() {
+            const id = document.getElementById("postId").value;
+            const response = await fetch(`${API_BASE_URL}/posts/${id}`);
+            const post = await response.json();
+
+            document.getElementById("postDetail").innerHTML =
+                `<h3>${post.title}</h3><p>${post.content}</p><img src="${post.image_url}" width="200">`;
+        }
+        async function searchPosts() {
+    const keyword = document.getElementById("searchKeyword").value;
+    if (!keyword) {
+        alert("검색어를 입력하세요.");
+        return;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/posts/search?keyword=${encodeURIComponent(keyword)}`);
+    const results = await response.json();
+
+    const searchResults = document.getElementById("searchResults");
+    searchResults.innerHTML = results.length > 0
+        ? results.map(post => `<li>${post.id}: ${post.title} <img src="${post.image_url || ''}" width="100"></li>`).join("")
+        : "<p>검색 결과가 없습니다.</p>";
+}
+
+        async function updatePost() {
+            if (!getToken()) return alert("로그인이 필요합니다.");
+
+            const formData = new FormData();
+            formData.append("title", document.getElementById("editTitle").value);
+            formData.append("content", document.getElementById("editContent").value);
+            if (document.getElementById("removeImage").checked) formData.append("removeImage", "true");
+            const newImage = document.getElementById("editImage").files[0];
+            if (newImage) formData.append("image", newImage);
+
+            const id = document.getElementById("editId").value;
+            const response = await fetch(`${API_BASE_URL}/posts/${id}`, {
+                method: "PUT",
+                headers: { "Authorization": `Bearer ${getToken()}` },
+                body: formData
+            });
+
+            alert((await response.json()).message);
+        }
+
+        async function deletePost() {
+            if (!getToken()) return alert("로그인이 필요합니다.");
+            const id = document.getElementById("deleteId").value;
+
+            const response = await fetch(`${API_BASE_URL}/posts/${id}`, {
+                method: "DELETE",
+                headers: { "Authorization": `Bearer ${getToken()}` }
+            });
+
+            alert((await response.json()).message);
+        }
+    </script>
+</body>
+</html>
