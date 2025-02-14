@@ -25,6 +25,16 @@ const Community = sequelize.define(
       type: DataTypes.INTEGER,
       defaultValue: 0,
     },
+    hashtags: {
+      type: DataTypes.STRING, // 해시태그를 문자열로 저장 (예: "#example, #nodejs")
+      allowNull: false,
+      validate: {
+        // 해시태그가 비어있지 않도록 validation 추가
+        notEmpty: {
+          msg: "해시태그는 필수입니다.",
+        },
+      },
+    },
   },
   {
     tableName: "communities", // MySQL에서 사용할 테이블명
