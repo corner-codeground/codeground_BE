@@ -157,4 +157,22 @@ router.get("/logout", isLoggedIn, (req, res) => {
   });
 });
 
+/**
+ * ✅ 전체 사용자 목록 조회 (GET /auth/users)
+ * - 로그인한 사용자가 볼 수 있도록 설정
+ */
+router.get("/users", isLoggedIn, async (req, res) => {
+  try {
+    const users = await User.findAll({
+      attributes: ["id", "username", "email"],
+    });
+
+    res.json(users);
+  } catch (err) {
+    console.error("사용자 목록 불러오기 오류:", err);
+    res.status(500).json({ message: "서버 오류" });
+  }
+});
+
+
 module.exports = router;

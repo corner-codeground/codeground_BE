@@ -19,6 +19,7 @@ class Like extends Sequelize.Model {
       paranoid: true,
       charset: 'utf8',
       collate: 'utf8_general_ci',
+      indexes: [{ unique: true, fields: ['user_id', 'post_id'] }] // 🔥 UNIQUE 제약 조건 추가
     });
   }
 

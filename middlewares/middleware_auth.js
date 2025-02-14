@@ -37,10 +37,12 @@ const jwt = require("jsonwebtoken");
 
 exports.isLoggedIn = (req, res, next) => {
   // ✅ SKIP_AUTH 환경 변수가 true면 인증 건너뛰기 (개발 및 테스트용)
+  /*
   if (process.env.SKIP_AUTH === "true") {
     req.user = { id: 1 }; // 기본 사용자 ID 설정 (테스트용)
     return next();
   }
+  */
 
   const token = req.headers.authorization?.split(" ")[1]; // `Bearer <token>` 형식에서 토큰 추출
 
