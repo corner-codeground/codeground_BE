@@ -17,6 +17,7 @@ async function initDB() {
         content: "이건 테스트 데이터입니다.",
         viewCount: 0,
         likes: 0,
+        hashtags: "#테스트, #nodejs",
       });
 
       console.log("🔥 삽입된 데이터:", testPost.dataValues);
