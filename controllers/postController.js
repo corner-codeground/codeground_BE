@@ -1,5 +1,26 @@
 const { Op } = require("sequelize");
 const db = require("../models");
+const multer=require("multer");
+const path=require("path");
+const fs = require("fs");
+
+// 📌 이미지 업로드 설정 (multer 사용)
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, "uploads/");
+    },
+    filename: (req, file, cb) => {
+        cb(null, `${Date.now()}_${file.originalname}`);
+    },
+});
+const upload = multer({ storage });
+
+// ✅ 기존 이미지 삭제 함수
+const deleteImage = (imagePath) => {
+    if (imagePath && fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
+    }
+};
 
 // 📌 1️⃣ 게시글 생성 (로그인 필요)
 const createPost = async (req, res) => {
@@ -9,14 +30,15 @@ const createPost = async (req, res) => {
         }
         const user_id = req.user.id;
         const { title, content, is_public, hashtags } = req.body;
-
+        const image_url = req.file ? `/uploads/${req.file.filename}` : null; // 이미지 URL 저장
+        
         if (!title || !content || !hashtags || hashtags.length === 0) {
             return res.status(400).json({ message: "제목, 내용, 해시태그는 필수 입력 항목입니다." });
         }
 
         console.log("✅ [게시글 생성] 요청된 user_id:", user_id);
 
-        const newPost = await db.Post.create({ title, content, is_public, user_id });
+        const newPost = await db.Post.create({ title, content, is_public, user_id, image_url });
 
         // 해시태그 연결
         const tagInstances = await Promise.all(
@@ -108,7 +130,7 @@ const searchPosts = async (req, res) => {
         // ✅ 검색 결과가 없을 경우 빈 배열 반환
         return res.json(posts);
     } catch (err) {
-        console.error("🔴 게시글 검색 오류:", err);
+        console.error("게시글 검색 오류:", err);
         res.status(500).json({ message: "서버 오류" });
     }
 };
@@ -127,6 +149,24 @@ const updatePost = async (req, res) => {
 
         if (String(post.user_id) !== String(user_id)) {
             return res.status(403).json({ message: "수정 권한이 없습니다." });
+        }
+
+        let newImageUrl = post.image_url;
+
+        // ✅ 기존 이미지 삭제 요청이 있는 경우
+        if (removeImage === "true") {
+            if (post.image_url) {
+                deleteImage(`.${post.image_url}`);
+            }
+            newImageUrl = null;
+        }
+
+        // ✅ 새로운 이미지 업로드된 경우
+        if (req.file) {
+            if (post.image_url) {
+                deleteImage(`.${post.image_url}`);
+            }
+            newImageUrl = `/uploads/${req.file.filename}`;
         }
 
         await post.update({ title, content, is_public });
@@ -150,7 +190,7 @@ const deletePost = async (req, res) => {
     const { id } = req.params;
     const user_id = req.user.id;
 
-    console.log(`🔎 [DELETE 요청] 게시글 ID: ${id}, 요청 사용자 ID: ${user_id}`);
+    console.log(`[DELETE 요청] 게시글 ID: ${id}, 요청 사용자 ID: ${user_id}`);
 
     try {
         const post = await db.Post.findByPk(id);
@@ -160,6 +200,11 @@ const deletePost = async (req, res) => {
 
         if (String(post.user_id) !== String(user_id)) {
             return res.status(403).json({ message: "삭제 권한이 없습니다." });
+        }
+
+        // ✅ 게시글 삭제 시 이미지 파일도 삭제
+        if (post.image_url) {
+            deleteImage(`.${post.image_url}`);
         }
 
         await post.destroy();
@@ -173,6 +218,7 @@ const deletePost = async (req, res) => {
 };
 
 module.exports = {
+    upload,
     createPost,
     getPostById,
     getAllPosts,
