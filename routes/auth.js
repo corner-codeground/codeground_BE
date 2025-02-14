@@ -1,85 +1,166 @@
+//수정완료료
+
 const express = require("express");
 const passport = require("passport");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const { Op } = require("sequelize");
 const User = require("../models/user");
+const Follow = require("../models/follow");
 const { isLoggedIn, isNotLoggedIn } = require("../middleware/authMiddleware");
+const upload = require("../middleware/uploadMiddleware");
 
 const router = express.Router();
 
-// 🔹 이메일 및 비밀번호 검증 함수 추가
-const isValidEmail = (email) => /\S+@\S+\.\S+/.test(email);
-const isValidPassword = (password) => password.length >= 6 && /\d/.test(password) && /[!@#$%^&*]/.test(password);
-
-// ✅ 회원가입 (POST /auth/join)
+// 회원가입 처리 (JWT 기반)
 router.post("/join", isNotLoggedIn, async (req, res) => {
-    let { username, email, password } = req.body;
+  const { username, email, password, confirmPassword } = req.body;
+  
+  if (password !== confirmPassword) {
+    return res.status(400).json({ message: "비밀번호가 일치하지 않습니다." });
+  }
 
-    // 🔹 입력 값 검증
-    if (!username || !email || !password) {
-        return res.status(400).json({ message: "모든 필드를 입력해야 합니다." });
+  try {
+    const existingUser = await User.findOne({ where: { email } });
+    if (existingUser) {
+      return res.status(400).json({ message: "이미 등록된 이메일입니다." });
     }
 
-    if (!isValidEmail(email)) {
-        return res.status(400).json({ message: "올바른 이메일 형식이 아닙니다." });
-    }
+    const hash = await bcrypt.hash(password, 10);
+    await User.create({ username, email, password: hash });
 
-    if (!isValidPassword(password)) {
-        return res.status(400).json({ message: "비밀번호는 최소 6자 이상이며, 숫자 및 특수문자를 포함해야 합니다." });
-    }
-
-    try {
-        email = email.toLowerCase(); // 🔹 이메일을 소문자로 변환하여 중복 방지
-
-        const existingUser = await User.findOne({ where: { email } });
-        if (existingUser) {
-            return res.status(400).json({ message: "이미 등록된 이메일입니다." });
-        }
-
-        // 🔹 비밀번호 해싱 및 사용자 저장 (bcrypt 강도 12로 증가)
-        const hash = await bcrypt.hash(password, 12);
-        const newUser = await User.create({ username, email, password: hash });
-
-        res.status(201).json({ message: "회원가입 성공", user: { id: newUser.id, username, email } });
-    } catch (err) {
-        console.error("회원가입 실패:", err);
-        res.status(500).json({ message: "회원가입 실패", error: err.toString() });
-    }
+    res.status(201).json({ message: "회원가입 성공" });
+  } catch (err) {
+    console.error("❌ 회원가입 실패:", err);
+    res.status(500).json({ message: "회원가입 실패" });
+  }
 });
 
-// ✅ 로그인 (POST /auth/login)
-router.post("/login", isNotLoggedIn, (req, res, next) => {
-    passport.authenticate("local", (err, user, info) => {
-        if (err) return next(err);
-        if (!user) return res.status(401).json({ message: info.message || "로그인 실패" });
+// 로그인 처리 (JWT 기반)
+ 
+router.post("/login", isNotLoggedIn, async (req, res) => {
+  const { email, password } = req.body;
 
-        req.login(user, (loginErr) => {
-            if (loginErr) return next(loginErr);
+  try {
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      return res.status(401).json({ message: "잘못된 이메일 또는 비밀번호입니다." });
+    }
 
-            // 🔹 JWT 토큰 생성
-            const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: "잘못된 사용자명 또는 비밀번호입니다." });
+    }
 
-            // 🔹 httpOnly 쿠키로 토큰 저장 (선택 사항)
-            res.cookie("token", token, {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === "production",
-                sameSite: "Strict"
-            });
+    // JWT 토큰 생성
+    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: "1h" });
 
-            return res.json({ message: "로그인 성공", token, user: { id: user.id, username: user.username, email: user.email } });
-        });
-    })(req, res, next);
+    res.json({ message: "로그인 성공", token, user });
+  } catch (err) {
+    console.error("❌ 로그인 오류:", err);
+    res.status(500).json({ message: "서버 오류" });
+  }
 });
 
-// ✅ 로그아웃 (POST /auth/logout)
-router.post("/logout", isLoggedIn, (req, res) => {
-    req.logout((err) => {
-        if (err) return res.status(500).json({ message: "로그아웃 실패", error: err.toString() });
+// 팔로잉 목록 조회
 
-        // 🔹 JWT 쿠키 삭제
-        res.clearCookie("token");
-        res.json({ message: "로그아웃 성공" });
+router.get("/profile/following", isLoggedIn, async (req, res) => {
+  try {
+    const following = await Follow.findAll({
+      where: { follower_id: req.user.id },
+      include: [{ model: User, as: "FollowingUser", attributes: ["username", "profileImage"] }],
     });
+
+    res.json(following.length ? { following } : { message: "팔로우한 사용자가 없습니다." });
+  } catch (err) {
+    console.error("❌ 팔로잉 목록 조회 오류:", err);
+    res.status(500).json({ message: "서버 오류" });
+  }
+});
+
+// 팔로워 목록 조회
+
+router.get("/profile/follower", isLoggedIn, async (req, res) => {
+  try {
+    const followers = await Follow.findAll({
+      where: { following_id: req.user.id },
+      include: [{ model: User, as: "FollowerUser", attributes: ["username", "profileImage"] }],
+    });
+
+    res.json({ followers });
+  } catch (err) {
+    console.error("❌ 팔로워 목록 조회 오류:", err);
+    res.status(500).json({ message: "서버 오류" });
+  }
+});
+
+// 프로필 조회
+
+router.get("/profile", isLoggedIn, async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id, { attributes: ["username", "bio", "profileImage"] });
+    if (!user) return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
+
+    const followersCount = await Follow.count({ where: { following_id: req.user.id } });
+    const followingsCount = await Follow.count({ where: { follower_id: req.user.id } });
+
+    res.json({ user, followersCount, followingsCount, isOwnProfile: true });
+  } catch (err) {
+    console.error("❌ 프로필 조회 오류:", err);
+    res.status(500).json({ message: "서버 오류" });
+  }
+});
+
+// 계정 정보 조회
+
+router.get("/account", isLoggedIn, async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id, { attributes: ["profileImage", "email", "username", "password", "darkMode"] });
+    if (!user) return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
+
+    res.json({ user });
+  } catch (err) {
+    console.error("❌ 계정 조회 오류:", err);
+    res.status(500).json({ message: "서버 오류" });
+  }
+});
+
+// 계정 정보 수정
+
+router.post("/account", isLoggedIn, upload.single("profileImage"), async (req, res) => {
+  try {
+    const { email, username, password, darkMode } = req.body;
+    const user = await User.findByPk(req.user.id);
+    if (!user) return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
+
+    const profileImage = req.file ? req.file.path : user.profileImage;
+
+    await user.update({ profileImage, email, username, password, darkMode });
+    res.json({ message: "계정 정보 수정 완료", user });
+  } catch (err) {
+    console.error("❌ 계정 수정 오류:", err);
+    res.status(500).json({ message: "서버 오류" });
+  }
+});
+
+// 계정 탈퇴
+
+router.delete("/account/delete", isLoggedIn, async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id);
+    if (!user) return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
+
+    await user.destroy();
+    res.json({ message: "계정 탈퇴 완료" });
+  } catch (err) {
+    console.error("❌ 계정 탈퇴 오류:", err);
+    res.status(500).json({ message: "서버 오류" });
+  }
+});
+
+//로그아웃
+router.post("/logout", (req, res) => {
+  res.json({ message: "로그아웃 완료" });
 });
 
 module.exports = router;

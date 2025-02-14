@@ -1,3 +1,5 @@
+//2차 수정 필요 
+
 const Sequelize = require("sequelize");
 
 class Post extends Sequelize.Model {
@@ -21,7 +23,7 @@ class Post extends Sequelize.Model {
           allowNull: false,
           defaultValue: true,
         },
-        created_at: {
+        /*created_at: {
           type: Sequelize.DATE,
           allowNull: false,
           defaultValue: Sequelize.NOW,
@@ -30,12 +32,12 @@ class Post extends Sequelize.Model {
           type: Sequelize.DATE,
           allowNull: false,
           defaultValue: Sequelize.NOW,
-        },
+        },*/
       },
       {
         sequelize,
-        timestamps: true,
-        underscored: false,
+        timestamps: true, //자동으로 createAt과 updateAt 추가
+        underscored: true, //createAt->created_at으로 변경
         modelName: "Post",
         tableName: "post",
         paranoid: true,

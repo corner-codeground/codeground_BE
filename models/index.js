@@ -1,40 +1,49 @@
-const Sequelize = require('sequelize');
-const fs = require('fs');
-const path = require('path');
-const env = process.env.NODE_ENV || 'development';
-const config = require('../config/config')[env];
+//수정 완료
+//3차 수정 
+
+const Sequelize = require("sequelize");
+const fs = require("fs");
+const path = require("path");
+const env = process.env.NODE_ENV || "development";
+const config = require("../config/config")[env];
 
 const db = {};
-const sequelize = new Sequelize(
-  config.database, config.username, config.password, config, {
-    logging: console.log 
-  }
-);
+const sequelize = new Sequelize(config.database, config.username, config.password, config, {
+    logging: console.log
+});
 
 db.sequelize = sequelize;
-db.Sequelize=Sequelize;
+db.Sequelize = Sequelize;
 
-const basename = path.basename(__filename);
-fs
-  .readdirSync(__dirname) // 현재 폴더의 모든 파일을 조회
-  .filter(file => { // 숨김 파일, index.js, js 확장자가 아닌 파일 필터링
-    (file.indexOf('.') !== 0) && (file !== basename) && (file.slice(-3) === '.js');
-  })
-  .forEach(file => { // 해당 파일의 모델 불러와서 init
-    const model = require(path.join(__dirname, file));
-    //model.initiate(sequelize);
-    db[model.name] = model;
-    
-    console.log(file, model.name);
-    
-    // db[model.name] = model;
-    // model.initiate(sequelize);
-  });
+// ✅ 모델을 직접 가져와서 초기화하는 방식으로 변경
+const User = require("./user");
+const Post = require("./post");
+const Follow = require("./follow");
+const Hashtag = require("./hashtag");
 
-Object.keys(db).forEach(modelName => { // associate 호출
-  if (db[modelName].associate) {
-    db[modelName].associate(db);
-  }
+// ✅ 모델 초기화 (`initiate()` 메서드 호출)
+User.initiate(sequelize);
+Post.initiate(sequelize);
+Follow.initiate(sequelize);
+Hashtag.initiate(sequelize);
+
+// ✅ 모델 간의 관계 설정 (`associate()` 호출)
+db.User = User;
+db.Post = Post;
+db.Follow = Follow;
+db.Hashtag = Hashtag;
+
+Object.keys(db).forEach((modelName) => {
+    if (db[modelName].associate) {
+        db[modelName].associate(db);
+    }
 });
+
+// ✅ 데이터베이스 연결 확인
+sequelize.authenticate()
+    .then(() => console.log("✅ 데이터베이스 연결 성공"))
+    .catch(err => console.error("❌ 데이터베이스 연결 실패:", err));
+
+console.log("📌 [DEBUG] 로드된 모델 목록:", Object.keys(db));
 
 module.exports = db;

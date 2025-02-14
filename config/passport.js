@@ -1,3 +1,5 @@
+//해원이 코드로 변경경
+
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const User = require('../models/user'); 
