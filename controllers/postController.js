@@ -65,8 +65,9 @@ const getAllPosts = async (req, res) => {
         });
 
         if (!posts || posts.length === 0) {
-            return res.status(404).json({ message: "게시글이 없습니다." });
+            return res.json([]); // ✅ 404 대신 빈 배열 반환
         }
+        
 
         // ✅ 프론트엔드에서 제목 클릭 후 상세 페이지 이동 가능하도록 ID 포함
         const formattedPosts = posts.map(post => ({
