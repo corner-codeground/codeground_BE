@@ -12,7 +12,7 @@ class Post extends Sequelize.Model {
           type: Sequelize.TEXT,
           allowNull: false,
         },
-        image: {
+        image_url: {
           type: Sequelize.STRING, // 📌 이미지 경로를 저장하는 필드 추가
           allowNull: true,
         },

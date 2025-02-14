@@ -154,9 +154,10 @@ const updatePost = async (req, res) => {
         let newImageUrl = post.image_url;
 
         // ✅ 기존 이미지 삭제 요청이 있는 경우
-        if (removeImage === "true") {
-            if (post.image_url) {
-                deleteImage(`.${post.image_url}`);
+        if (removeImage === "true"&&post.image_url) {
+            const imagePath=path.join(__dirname, "..", post.image_url);
+            if (fs.existsSync(imagePath)) {
+                fs.unlinkSync(imagePath);
             }
             newImageUrl = null;
         }
@@ -164,13 +165,16 @@ const updatePost = async (req, res) => {
         // ✅ 새로운 이미지 업로드된 경우
         if (req.file) {
             if (post.image_url) {
-                deleteImage(`.${post.image_url}`);
+                const imagePath = path.join(__dirname, "..", post.image_url);
+                if (fs.existsSync(imagePath)) {
+                    fs.unlinkSync(imagePath);
+                }
             }
             newImageUrl = `/uploads/${req.file.filename}`;
         }
 
-        await post.update({ title, content, is_public });
-
+        await post.update({ title, content, is_public, image_url:newImageUrl });
+        
         if (hashtags && hashtags.length > 0) {
             const tagInstances = await Promise.all(
                 hashtags.map(tag => db.Hashtag.findOrCreate({ where: { tag } }))

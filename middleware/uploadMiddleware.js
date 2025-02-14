@@ -1,5 +1,11 @@
 const multer = require("multer");
 const path = require("path");
+const fs = require("fs");
+
+// uploads/ 폴더가 없을 경우 자동 생성
+if (!fs.existsSync("uploads")) {
+  fs.mkdirSync("uploads");
+}
 
 // 저장 위치 및 파일명 설정
 const storage = multer.diskStorage({
