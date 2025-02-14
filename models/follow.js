@@ -37,12 +37,12 @@ class Follow extends Sequelize.Model {
     Follow.belongsTo(db.User, {
       foreignKey: 'following_id',
       targetKey: 'id',
-      as: 'FollowingUser', // 팔로우하는 사람 -> 관계 이름 다르게 설정해야 됨
+      as: 'FollowingUser', 
     });
     Follow.belongsTo(db.User, {
       foreignKey: 'follower_id',
       targetKey: 'id',
-      as: 'FollowerUser', // 팔로우 당하는 사람
+      as: 'FollowerUser',
     });
     }
 }

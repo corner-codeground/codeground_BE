@@ -47,31 +47,29 @@ class User extends Sequelize.Model {
 
   static associate(db) {
     // Follow 모델과 User 모델 간의 관계 정의
-    Follow.belongsTo(db.User, {
-      foreignKey: 'followingId',
-      targetKey: 'id',
-      as: 'Following', // 팔로우하는 사람
+    User.belongsToMany(User, {
+      through: 'Follow',
+      foreignKey: 'follower_id',
+      otherKey: 'following_id',
+      as: 'Followings', // 사용자가 팔로우하는 사람들
     });
+    
+    User.belongsToMany(User, {
+      through: 'Follow',
+      foreignKey: 'following_id',
+      otherKey: 'follower_id',
+      as: 'Followers', // 사용자를 팔로우하는 사람들
+    });
+    
 
-    Follow.belongsTo(db.User, {
-      foreignKey: 'followerId',
-      targetKey: 'id',
-      as: 'Follower', // 팔로우 당하는 사람
-    });
+    // User.belongsToMany(db.Follow, {
+    //   foreignKey: 'follower_id',
+    //   targetKey: 'id',
+    //   as: 'Follower', // 팔로우 당하는 사람
+    //   through: db.Follow, // 중간 테이블 설정
+    // });
   }
-  // static associate(db) {
-  //   db.User.hasMany(db.Post);
-  //   db.User.belongsToMany(db.User, {
-  //     foreignKey: 'followingId',
-  //     as: 'Followers',
-  //     through: 'Follow',
-  //   });
-  //   db.User.belongsToMany(db.User, {
-  //     foreignKey: 'followerId',
-  //     as: 'Followings',
-  //     through: 'Follow',
-  //   });
-  // }
+
 };
 
 // 비밀번호 확인

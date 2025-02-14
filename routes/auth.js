@@ -6,6 +6,7 @@ const User = require("../models/user");
 const Follow = require("../models/follow");
 const { isLoggedIn, isNotLoggedIn } = require("../middleware/authMiddleware"); 
 const upload = require("../middleware/upload");
+const { Op } = require('sequelize');
 
 const router = express.Router();
 
@@ -59,12 +60,8 @@ async function renderProfile(req, res, userId) {
     if (!currentUser) {
       return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
     }
-    const followersCount = await Follow.count({
-      where: { following_id: userId },
-    });
-    const followingsCount = await Follow.count({
-      where: { follower_id: userId },
-    });
+    const followersCount = await Follow.count({ where: { following_id: userId },});
+    const followingsCount = await Follow.count({ where: { follower_id: userId },});
 
     const isOwnProfile = req.user && req.user.id === Number(userId);
 
@@ -80,6 +77,38 @@ async function renderProfile(req, res, userId) {
     res.status(500).json({ message: "오류" });
   }
 }
+// 팔로잉 목록 조회 ok
+router.get('/profile/following', isLoggedIn, async (req, res) => {
+  const userId = req.user.id; 
+  try {
+    const following = await Follow.findAll({
+      where: { follower_id: userId }, // 내가 팔로우한 사용자
+      include: [{ model: User, as: 'FollowingUser', attributes: ['username', 'profileImage'] }]
+    });
+    if (following.length === 0) { 
+      return res.json({ message: "팔로우한 사용자가 없습니다." }); 
+    }
+    res.json({following});
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "서버 오류" });
+  }
+});
+
+// 팔로워 목록 조회 ok
+router.get('/profile/follower', isLoggedIn, async (req, res) => {
+  const userId = req.user.id; 
+  try {
+    const followers = await Follow.findAll({
+      where: { following_id: userId }, // 나를 팔로우한 사용자
+      include: [{ model: User, as: 'FollowerUser', attributes: ['username', 'profileImage'] }]
+    });
+    res.json({ followers });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "서버 오류" });
+  }
+});
 
 // 프로필 조회 ok
 router.get("/profile", isLoggedIn, async (req, res) => {
@@ -88,19 +117,7 @@ router.get("/profile", isLoggedIn, async (req, res) => {
     return res.status(401).json({ message: "로그인이 필요합니다." }); // 로그인 안 된 경우
   }
   await renderProfile(req, res, req.user.id);
-  // try {
-  //   const user = await User.findByPk(req.user.id, { attributes: ["username", "bio", "profileImage"] });
-  //   if (!user) return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
-
-  //   const followersCount = await Follow.count({ where: { following_id: req.user.id } });
-  //   const followingsCount = await Follow.count({ where: { follower_id: req.user.id } });
-
-  //   res.json({ user, followersCount, followingsCount });
-  // } catch (err) {
-  //   console.error(err);
-  //   res.status(500).json({ message: "서버 오류" });
-  // }
-});
+}); 
 
 // 프로필 조회 (다른 사용자 프로필) ok
 router.get('/profile/:id', isLoggedIn, async (req, res) => {
@@ -127,7 +144,7 @@ router.post("/account", isLoggedIn, upload.single("profileImage")/*추가*/, asy
     const user = await User.findByPk(req.user.id);
     if (!user) return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
 
-    const profileImage = req.file ? req.file.path : user.profileImage; // 프로필 사진이 업로드되었으면 새 파일 경로를 사용하고, 아니면 기존의 프로필 이미지 경로를 사용
+    const profileImage = req.file ? req.file.path : user.profileImage; // 프로필 사진 업로드되면 새 파일 경로를 사용 or 기존의 프로필 이미지 경로 사용
 
     await user.update({ profileImage, email, username, password, darkMode });
     res.json({ message: "계정 정보 수정 완료", user }); 
