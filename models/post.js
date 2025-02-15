@@ -58,5 +58,4 @@ class Post extends Sequelize.Model {
     }
   }
 }
-
 module.exports = Post;

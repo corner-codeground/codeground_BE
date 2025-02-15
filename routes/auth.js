@@ -9,7 +9,7 @@ const upload = require("../middleware/uploadMiddleware");
 
 const router = express.Router();
 
-// 회원가입 (POST /auth/join) 
+// ✅ 회원가입 (POST /auth/join) 
 router.post("/join", isNotLoggedIn, async (req, res) => {
   const { username, email, password, confirmPassword } = req.body;
 
@@ -28,12 +28,12 @@ router.post("/join", isNotLoggedIn, async (req, res) => {
 
     res.status(201).json({ message: "회원가입 성공" });
   } catch (err) {
-    console.error("회원가입 실패:", err);
+    console.error("❌ 회원가입 실패:", err);
     res.status(500).json({ message: "회원가입 실패" });
   }
 });
 
-// 로그인 (POST /auth/login) ok
+// ✅ 로그인 (POST /auth/login) ok
 router.post("/login", isNotLoggedIn, async (req, res) => {
   const { email, password } = req.body;
 
@@ -48,12 +48,12 @@ router.post("/login", isNotLoggedIn, async (req, res) => {
       return res.status(401).json({ message: "잘못된 이메일 또는 비밀번호입니다." });
     }
 
-    // JWT 토큰 발급
+    // ✅ JWT 토큰 발급
     const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: "1h" });
 
     res.json({ message: "로그인 성공", token, user });
   } catch (err) {
-    console.error("로그인 오류:", err);
+    console.error("❌ 로그인 오류:", err);
     res.status(500).json({ message: "서버 오류" });
   }
 });
@@ -86,7 +86,7 @@ async function renderProfile(req, res, userId) {
   }
 }
 
-// 팔로우한 사용자 목록 조회 (GET /auth/profile/following) ok
+// ✅ 팔로우한 사용자 목록 조회 (GET /auth/profile/following) ok
 router.get("/profile/following", isLoggedIn, async (req, res) => {
   try {
     const following = await Follow.findAll({
@@ -96,12 +96,12 @@ router.get("/profile/following", isLoggedIn, async (req, res) => {
 
     res.json(following.length ? { following } : { message: "팔로우한 사용자가 없습니다." });
   } catch (err) {
-    console.error("팔로잉 목록 조회 오류:", err);
+    console.error("❌ 팔로잉 목록 조회 오류:", err);
     res.status(500).json({ message: "서버 오류" });
   }
 });
 
-// 나를 팔로우한 사용자 목록 조회 (GET /auth/profile/follower) ok
+// ✅ 나를 팔로우한 사용자 목록 조회 (GET /auth/profile/follower) ok
 router.get("/profile/follower", isLoggedIn, async (req, res) => {
   try {
     const followers = await Follow.findAll({
@@ -111,23 +111,23 @@ router.get("/profile/follower", isLoggedIn, async (req, res) => {
 
     res.json({ followers });
   } catch (err) {
-    console.error("팔로워 목록 조회 오류:", err);
+    console.error("❌ 팔로워 목록 조회 오류:", err);
     res.status(500).json({ message: "서버 오류" });
   }
 });
 
-// 프로필 조회 (자신) (GET /auth/profile) ok
+// ✅ 프로필 조회 (자신) (GET /auth/profile) ok
 router.get("/profile", isLoggedIn, async (req, res) => {
   await renderProfile(req, res, req.user.id);
 });
 
-// 프로필 조회 (다른 사용자) (GET /auth/profile/:id) ok
+// ✅ 프로필 조회 (다른 사용자) (GET /auth/profile/:id) ok
 router.get("/profile/:id", isLoggedIn, async (req, res) => {
   const { id } = req.params;
   await renderProfile(req, res, id);
 });
 
-// 계정 정보 조회 (GET /auth/account) ok
+// ✅ 계정 정보 조회 (GET /auth/account) ok
 router.get("/account", isLoggedIn, async (req, res) => {
   try {
     const user = await User.findByPk(req.user.id, {
@@ -137,12 +137,12 @@ router.get("/account", isLoggedIn, async (req, res) => {
 
     res.json({ user });
   } catch (err) {
-    console.error("계정 조회 오류:", err);
+    console.error("❌ 계정 조회 오류:", err);
     res.status(500).json({ message: "서버 오류" });
   }
 });
 
-// 계정 정보 수정 (POST /auth/account) 
+// ✅ 계정 정보 수정 (POST /auth/account) 
 router.post("/account", isLoggedIn, upload.single("profileImage"), async (req, res) => {
   try {
     const { email, username, password, darkMode } = req.body;
@@ -160,12 +160,12 @@ router.post("/account", isLoggedIn, upload.single("profileImage"), async (req, r
     await user.update(updatedData);
     res.json({ message: "계정 정보 수정 완료", user });
   } catch (err) {
-    console.error("계정 수정 오류:", err);
+    console.error("❌ 계정 수정 오류:", err);
     res.status(500).json({ message: "서버 오류" });
   }
 });
 
-// 계정 탈퇴 (DELETE /auth/account/delete) 
+// ✅ 계정 탈퇴 (DELETE /auth/account/delete) 
 router.delete("/account/delete", isLoggedIn, async (req, res) => {
   try {
     const user = await User.findByPk(req.user.id);
@@ -174,12 +174,12 @@ router.delete("/account/delete", isLoggedIn, async (req, res) => {
     await user.destroy();
     res.json({ message: "계정 탈퇴 완료" });
   } catch (err) {
-    console.error("계정 탈퇴 오류:", err);
+    console.error("❌ 계정 탈퇴 오류:", err);
     res.status(500).json({ message: "서버 오류" });
   }
 });
 
-// 로그아웃 (POST /auth/logout)
+// ✅ 로그아웃 (POST /auth/logout)
 router.post("/logout", (req, res) => {
   res.json({ message: "로그아웃 완료" });
 });
