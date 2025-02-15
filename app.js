@@ -14,6 +14,7 @@ const likeRouter = require("./routes/route_like");
 const scrapRouter = require("./routes/route_scrap");
 const followRouter = require("./routes/route_follow");
 const postRouter = require("./routes/postRoutes");
+const runCodeRouter = require('./routes/route_runCode')
 
 dotenv.config();
 const app = express();
@@ -81,6 +82,7 @@ app.use("/likes", likeRouter);
 app.use("/scraps", scrapRouter);
 app.use("/follow", followRouter);
 app.use("/posts", postRouter);
+app.use("/runCodes", runCodeRouter);
 
 // 홈 화면
 app.get("/", (req, res) => {
@@ -102,4 +104,3 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`서버가 ${PORT}번 포트에서 실행 중입니다.`);
 });
-
