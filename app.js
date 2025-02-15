@@ -1,4 +1,5 @@
-//수정완료료
+
+//수정완료
 
 const express = require("express");
 const passport = require("./config/passport");
@@ -38,6 +39,7 @@ app.set("views", path.join(__dirname, "views"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser(process.env.COOKIE_SECRET));
+
 app.use(session({
     resave: false,
     saveUninitialized: false,
@@ -82,3 +84,9 @@ sequelize.sync()
     .catch(err => console.error("❌ 데이터베이스 연결 오류", err));
 
 module.exports = app; // `server.js`에서 사용하기 위해 `app` 내보내기
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`서버가 ${PORT}번 포트에서 실행 중입니다.`);
+});
+
