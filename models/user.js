@@ -61,13 +61,6 @@ class User extends Sequelize.Model {
       as: 'Followers', // 사용자를 팔로우하는 사람들
     });
     
-
-    // User.belongsToMany(db.Follow, {
-    //   foreignKey: 'follower_id',
-    //   targetKey: 'id',
-    //   as: 'Follower', // 팔로우 당하는 사람
-    //   through: db.Follow, // 중간 테이블 설정
-    // });
   }
 
 };

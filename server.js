@@ -26,5 +26,6 @@ async function initDB() {
     console.error("❌ DB 작업 중 오류 발생:", err);
   }
 }
-
+Community.initiate(sequelize); // 추가
 initDB();
+

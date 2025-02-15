@@ -4,7 +4,8 @@ const cookieParser = require('cookie-parser');
 const path = require('path');
 const dotenv = require('dotenv');
 const authRouter = require('./routes/auth');
-const { sequelize } = require('./models');
+// const { sequelize } = require('./models');
+const { sequelize } = require("./config/config"); ///
 
 dotenv.config();
 const app = express();
