@@ -1,3 +1,5 @@
+//해원이 코드 추가
+ 
 const Sequelize = require('sequelize');
 const bcrypt = require('bcryptjs');
 const Follow = require('./follow.js');

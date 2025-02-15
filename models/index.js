@@ -1,12 +1,18 @@
 const fs = require('fs');
 const path = require('path');
 const env = process.env.NODE_ENV || 'development';
-
 const Sequelize = require('sequelize'); // Sequelize 클래스 가져오기
-const { sequelize } = require("../config/config"); // 환경에 맞는 sequelize 인스턴스 가져오기
+const config = require("../config/config")[env];
 
 const db = {};
-db.sequelize = sequelize; // 이미 sequelize 인스턴스가 있기 때문에 재선언할 필요 없습니다.
+
+const sequelize = new Sequelize(config.database, config.username, config.password, {
+  host: config.host,
+  dialect: config.dialect,
+});
+
+db.sequelize = sequelize;
+db.Sequelize = Sequelize;
 
 const basename = path.basename(__filename);
 fs
@@ -28,5 +34,6 @@ Object.keys(db).forEach(modelName => { // associate 호출
     db[modelName].associate(db);
   }
 });
-console.log(Object.keys(db)); 
+console.log("📌 [DEBUG] 로드된 모델 목록:", Object.keys(db));
 module.exports = db;
+

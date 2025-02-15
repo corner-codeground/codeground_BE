@@ -1,13 +1,13 @@
-// config.js
 require("dotenv").config(); // .env 파일 불러오기
-const { Sequelize } = require('sequelize');
+// const { config } = require("dotenv");
+// const { Sequelize } = require('sequelize');
 
-module.exports = {
+const config = {
   development: {
-    database: process.env.DB_NAME || 'codeground',
-    username: process.env.DB_USER || 'root',
-    password: process.env.DB_PASS || 'root',
-    host: process.env.DB_HOST || 'localhost',
+    database: process.env.DB_NAME,
+    username: process.env.DB_USER,
+    password: process.env.DB_PASS,
+    host: process.env.DB_HOST,
     dialect: 'mysql', // MySQL 사용
   },
   production: {
@@ -26,11 +26,13 @@ module.exports = {
   },
 };
 
-// Sequelize 인스턴스를 초기화 (이제는 config에서 호출)
-const config = require('./config');
-const sequelize = new Sequelize(config.development.database, config.development.username, config.development.password, {
-  host: config.development.host,
-  dialect: config.development.dialect,
-});
+// models/index.js에서 초기화로 변경
+// // Sequelize 인스턴스를 초기화 (이제는 config에서 호출)
+// const config = require('./config');
+// const sequelize = new Sequelize(config.development.database, config.development.username, config.development.password, {
+//   host: config.development.host,
+//   dialect: config.development.dialect,
+// });
 
-module.exports = { sequelize, config };
+module.exports = config;
+// module.exports = { sequelize, config };
