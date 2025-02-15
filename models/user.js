@@ -18,7 +18,7 @@ class User extends Sequelize.Model {
         allowNull: true,
       },
       profileImage: {
-        type: Sequelize.STRING, // 📌 이미지 URL 저장
+        type: Sequelize.STRING, // 이미지 URL 저장
         allowNull: true, 
         defaultValue: 'defaultprofileImage.png',
       },
@@ -27,7 +27,7 @@ class User extends Sequelize.Model {
         allowNull: true,
         defaultValue: '한 줄 소개가 없습니다.',
       },
-      darkmode: { // 📌 다크모드 기능 추가
+      darkmode: { // 다크모드 추가
         type: Sequelize.BOOLEAN,
         allowNull: false,
         defaultValue: false,
@@ -38,14 +38,14 @@ class User extends Sequelize.Model {
       underscored: false,
       modelName: 'User',
       tableName: 'user',
-      paranoid: true, // ✅ soft delete 지원 (`deleted_at` 사용)
+      paranoid: true, // soft delete 지원 (deleted_at 사용)
       charset: 'utf8',
       collate: 'utf8_general_ci',
     });
   }
 
   static associate(db) {
-    // ✅ User 모델 간의 팔로우 관계 설정
+    // User 모델 간의 팔로우 관계 설정
     User.belongsToMany(User, {
       through: 'Follow',
       foreignKey: 'follower_id',
@@ -61,7 +61,7 @@ class User extends Sequelize.Model {
     });
   }
 
-  // ✅ 비밀번호 확인
+  // 비밀번호 확인
   validPassword(password) {
     return bcrypt.compareSync(password, this.password);
   }

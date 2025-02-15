@@ -1,10 +1,9 @@
 const fs = require('fs');
 const path = require('path');
 
-/**
- * 이미지 파일 삭제 함수
- * @param {string} imagePath - 삭제할 이미지의 경로
- */
+//이미지 파일 삭제 함수
+//  @param {string} imagePath - 삭제할 이미지의 경로
+
 const removeImage = (imagePath) => {
     if (!imagePath) {
         console.log('삭제할 이미지 경로가 제공되지 않았습니다.');
