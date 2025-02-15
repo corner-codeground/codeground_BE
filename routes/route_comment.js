@@ -1,6 +1,6 @@
 const express = require("express");
 const { Comment } = require("../models");
-const { isLoggedIn } = require("../middlewares/middleware_auth"); // ✅ 로그인 미들웨어 추가
+const { isLoggedIn } = require("../middleware/authMiddleware"); // ✅ 로그인 미들웨어 추가
 
 const router = express.Router();
 

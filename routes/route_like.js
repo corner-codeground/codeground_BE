@@ -1,6 +1,6 @@
 const express = require('express');
 const { Like, Post, User } = require('../models');
-const { isLoggedIn } = require('../middlewares/middleware_auth'); // 로그인 체크 미들웨어
+const { isLoggedIn } = require('../middleware/authMiddleware'); // 로그인 체크 미들웨어
 
 const router = express.Router();
 

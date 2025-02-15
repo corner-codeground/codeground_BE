@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const postController = require("../controllers/postController");
-const { isLoggedIn } = require("../middlewares/middleware_auth");
+const { isLoggedIn } = require("../middleware/authMiddleware");
 
 // 게시글 생성 (로그인 필요)
 router.post("/", isLoggedIn, postController.createPost);
