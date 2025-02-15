@@ -51,7 +51,7 @@ const createPost = async (req, res) => {
     }
 };
 
-// 2. 전체 게시글 조회
+// 전체 게시글 조회
 const getAllPosts = async (req, res) => {
     try {
         const posts = await db.Post.findAll({

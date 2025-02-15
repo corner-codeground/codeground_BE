@@ -9,7 +9,7 @@ const upload = require("../middleware/uploadMiddleware");
 
 const router = express.Router();
 
-// 회원가입 (POST /auth/join)
+// 회원가입 (POST /auth/join) 
 router.post("/join", isNotLoggedIn, async (req, res) => {
   const { username, email, password, confirmPassword } = req.body;
 
@@ -33,7 +33,7 @@ router.post("/join", isNotLoggedIn, async (req, res) => {
   }
 });
 
-// 로그인 (POST /auth/login)
+// 로그인 (POST /auth/login) ok
 router.post("/login", isNotLoggedIn, async (req, res) => {
   const { email, password } = req.body;
 
@@ -58,33 +58,35 @@ router.post("/login", isNotLoggedIn, async (req, res) => {
   }
 });
 
-// 현재 로그인된 사용자 정보 가져오기 (GET /auth/me)
-router.get("/me", isLoggedIn, async (req, res) => {
+// /profile, /profile/:id 에서 프로필 조회 공통 로직
+async function renderProfile(req, res, userId) {
   try {
-    const user = await User.findByPk(req.user.id, {
-      attributes: ["id", "username", "email"],
+    const currentUser = await User.findByPk(userId, {
+      attributes: ["username", "bio", "profileImage"],
     });
-    if (!user) return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
+    
+    if (!currentUser) {
+      return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
+    }
+    const followersCount = await Follow.count({ where: { following_id: userId },});
+    const followingsCount = await Follow.count({ where: { follower_id: userId },});
 
-    res.json({ user });
+    const isOwnProfile = req.user && req.user.id === Number(userId);
+
+    res.json({
+      user: currentUser,
+      followersCount, 
+      followingsCount, 
+      currentUser, 
+      isOwnProfile,
+    });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "서버 오류" });
+    res.status(500).json({ message: "오류" });
   }
-});
+}
 
-// 프로필 조회 (자신) (GET /auth/profile)
-router.get("/profile", isLoggedIn, async (req, res) => {
-  await renderProfile(req, res, req.user.id);
-});
-
-// 프로필 조회 (다른 사용자) (GET /auth/profile/:id)
-router.get("/profile/:id", isLoggedIn, async (req, res) => {
-  const { id } = req.params;
-  await renderProfile(req, res, id);
-});
-
-// 팔로우한 사용자 목록 조회 (GET /auth/profile/following)
+// 팔로우한 사용자 목록 조회 (GET /auth/profile/following) ok
 router.get("/profile/following", isLoggedIn, async (req, res) => {
   try {
     const following = await Follow.findAll({
@@ -99,7 +101,7 @@ router.get("/profile/following", isLoggedIn, async (req, res) => {
   }
 });
 
-// 나를 팔로우한 사용자 목록 조회 (GET /auth/profile/follower)
+// 나를 팔로우한 사용자 목록 조회 (GET /auth/profile/follower) ok
 router.get("/profile/follower", isLoggedIn, async (req, res) => {
   try {
     const followers = await Follow.findAll({
@@ -114,7 +116,18 @@ router.get("/profile/follower", isLoggedIn, async (req, res) => {
   }
 });
 
-// 계정 정보 조회 (GET /auth/account)
+// 프로필 조회 (자신) (GET /auth/profile) ok
+router.get("/profile", isLoggedIn, async (req, res) => {
+  await renderProfile(req, res, req.user.id);
+});
+
+// 프로필 조회 (다른 사용자) (GET /auth/profile/:id) ok
+router.get("/profile/:id", isLoggedIn, async (req, res) => {
+  const { id } = req.params;
+  await renderProfile(req, res, id);
+});
+
+// 계정 정보 조회 (GET /auth/account) ok
 router.get("/account", isLoggedIn, async (req, res) => {
   try {
     const user = await User.findByPk(req.user.id, {
@@ -129,7 +142,7 @@ router.get("/account", isLoggedIn, async (req, res) => {
   }
 });
 
-// 계정 정보 수정 (POST /auth/account)
+// 계정 정보 수정 (POST /auth/account) 
 router.post("/account", isLoggedIn, upload.single("profileImage"), async (req, res) => {
   try {
     const { email, username, password, darkMode } = req.body;
@@ -152,7 +165,7 @@ router.post("/account", isLoggedIn, upload.single("profileImage"), async (req, r
   }
 });
 
-// 계정 탈퇴 (DELETE /auth/account/delete)
+// 계정 탈퇴 (DELETE /auth/account/delete) 
 router.delete("/account/delete", isLoggedIn, async (req, res) => {
   try {
     const user = await User.findByPk(req.user.id);
