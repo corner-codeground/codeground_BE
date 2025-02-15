@@ -64,7 +64,7 @@ const openai = new OpenAI({
 });
 
 // ✅ 자동 감지 코드 실행 API (DB 저장 기능 추가)
-router.post("/run-code", async (req, res) => {
+router.post("/", async (req, res) => {
     const { user_id, code } = req.body;  // ✅ user_id도 받아와서 저장 가능하도록 수정
 
     try {
