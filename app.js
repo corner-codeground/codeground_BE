@@ -14,6 +14,7 @@ const likeRouter = require("./routes/route_like");
 const scrapRouter = require("./routes/route_scrap");
 const followRouter = require("./routes/route_follow");
 const postRouter = require("./routes/postRoutes");
+const runCodeRouter = require("./routes/route_runCode");
 
 dotenv.config();
 const app = express();
@@ -29,7 +30,7 @@ app.set("views", path.join(__dirname, "views"));
 // CORS 설정 추가
 app.use(
   cors({
-    origin: "http://127.0.0.1:5500", // 프론트엔드 실행 주소 (Live Server)
+    origin: "http://localhost:3000/", // 프론트엔드 실행 주소 (Live Server)
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -81,6 +82,7 @@ app.use("/likes", likeRouter);
 app.use("/scraps", scrapRouter);
 app.use("/follow", followRouter);
 app.use("/posts", postRouter);
+app.use("/runCodes", runCodeRouter);
 
 // 홈 화면
 app.get("/", (req, res) => {
@@ -97,9 +99,12 @@ sequelize
     console.error("데이터베이스 연결 오류", err);
   });
 
+app.post("/auth/join", (req, res) => {
+  res.send("회원가입 성공");
+});
+
 // 서버 실행
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`서버가 ${PORT}번 포트에서 실행 중입니다.`);
 });
-
