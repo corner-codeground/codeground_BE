@@ -1,13 +1,11 @@
 const express = require("express");
 const { Comment } = require("../models");
-const { isLoggedIn } = require("../middleware/authMiddleware"); // ✅ 로그인 미들웨어 추가
+// 로그인 미들웨어 추가
+const { isLoggedIn } = require("../middleware/authMiddleware"); 
 
 const router = express.Router();
 
-/**
- * ✅ 댓글 작성 (POST /comment)
- * - 로그인한 사용자만 댓글 작성 가능
- */
+//댓글 작성 (POST /comment)-로그인한 사용자만 댓글 작성 가능
 router.post("/", isLoggedIn, async (req, res, next) => {
   try {
     const { post_id, comment } = req.body;
@@ -18,7 +16,7 @@ router.post("/", isLoggedIn, async (req, res, next) => {
 
     const newComment = await Comment.create({
       post_id,
-      user_id: req.user.id, // ✅ 로그인한 사용자의 ID 사용
+      user_id: req.user.id, // 로그인한 사용자의 ID 사용
       comment,
     });
 
@@ -29,10 +27,7 @@ router.post("/", isLoggedIn, async (req, res, next) => {
   }
 });
 
-/**
- * ✅ 댓글 수정 및 삭제 (PATCH, DELETE /comment/:id)
- * - 로그인한 사용자만 댓글 수정 및 삭제 가능
- */
+//댓글 수정 및 삭제 (PATCH, DELETE /comment/:id) - 로그인한 사용자만 댓글 수정 및 삭제 가능
 router
   .route("/:id")
   .patch(isLoggedIn, async (req, res, next) => {
@@ -42,7 +37,7 @@ router
         return res.status(404).json({ message: "댓글을 찾을 수 없습니다." });
       }
 
-      // ✅ 본인 댓글만 수정 가능
+      // 본인 댓글만 수정 가능
       if (comment.user_id !== req.user.id) {
         return res.status(403).json({ message: "본인의 댓글만 수정할 수 있습니다." });
       }
@@ -61,7 +56,7 @@ router
         return res.status(404).json({ message: "삭제할 댓글을 찾을 수 없습니다." });
       }
 
-      // ✅ 본인 댓글만 삭제 가능
+      // 본인 댓글만 삭제 가능
       if (comment.user_id !== req.user.id) {
         return res.status(403).json({ message: "본인의 댓글만 삭제할 수 있습니다." });
       }

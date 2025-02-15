@@ -4,7 +4,7 @@ const jwt = require("jsonwebtoken");
 exports.isLoggedIn = (req, res, next) => {
     const token = req.headers.authorization?.split(" ")[1];
 
-    // ✅ 토큰이 없거나, "undefined"일 경우 예외 처리
+    // 토큰이 없거나 undefined일 경우 예외 처리
     if (!token || token === "undefined") {
         return res.status(401).json({ message: "로그인이 필요합니다." });
     }
@@ -18,11 +18,11 @@ exports.isLoggedIn = (req, res, next) => {
     }
 };
 
-// JWT 미들웨어 (로그인하지 않은 상태에서만 접근 가능)
+// JWT 미들웨어 (로그인하지 않은 상태)
 exports.isNotLoggedIn = (req, res, next) => {
     const token = req.headers.authorization?.split(" ")[1];
 
-    // ✅ 토큰이 없거나, "undefined"일 경우 예외 처리
+    // 토큰이 없거나 undefined일 경우 예외 처리
     if (!token || token === "undefined") {
         return next(); // 로그인되지 않은 상태라면 다음 미들웨어 실행
     }

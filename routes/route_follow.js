@@ -8,17 +8,18 @@ const router = express.Router();
 router.post('/:userId', isLoggedIn, async (req, res) => {
   try {
       const { userId } = req.params;
-      const followerId = req.user?.id; // ✅ req.user가 undefined일 경우 대비
+      const followerId = req.user?.id; // req.user가 undefined일 경우 대비
 
-      console.log(`📌 팔로우 요청 - follower_id: ${followerId}, following_id: ${userId}`);
+      console.log(`팔로우 요청 - follower_id: ${followerId}, following_id: ${userId}`);
 
       if (!followerId) {
-          console.error("❌ 오류: req.user가 없습니다. (로그인이 필요합니다.)");
-          return res.status(401).json({ message: '로그인이 필요합니다.' }); // ✅ 로그인 오류 처리
+        // 로그인 오류 처리
+          console.error("오류: req.user가 없습니다. (로그인이 필요합니다.)");
+          return res.status(401).json({ message: '로그인이 필요합니다.' }); 
       }
 
       if (parseInt(userId, 10) === followerId) {
-          console.error("❌ 오류: 자기 자신을 팔로우할 수 없습니다.");
+          console.error("오류: 자기 자신을 팔로우할 수 없습니다.");
           return res.status(400).json({ message: '자기 자신을 팔로우할 수 없습니다.' });
       }
 
@@ -27,16 +28,16 @@ router.post('/:userId', isLoggedIn, async (req, res) => {
       });
 
       if (followExists) {
-          console.error("❌ 오류: 이미 팔로우 중입니다.");
+          console.error("오류: 이미 팔로우 중입니다.");
           return res.status(400).json({ message: '이미 팔로우 중입니다.' });
       }
 
       await Follow.create({ follower_id: followerId, following_id: userId });
-      console.log("✅ 팔로우 성공!");
+      console.log("팔로우 성공!");
       res.status(201).json({ message: '팔로우 성공' });
 
   } catch (error) {
-      console.error('❌ 서버 오류:', error);
+      console.error('서버 오류:', error);
       res.status(500).json({ message: '서버 오류' });
   }
 });

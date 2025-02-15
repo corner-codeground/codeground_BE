@@ -1,14 +1,12 @@
-//수정완료
-//2차 수정 필요-완료 
 
 const express = require("express");
 const router = express.Router();
-const postController = require("../controllers/postController"); // ✅ 올바르게 불러오는지 확인
+const postController = require("../controllers/postController"); // 올바르게 불러오는지 확인
 const { isLoggedIn } = require("../middleware/authMiddleware");
 const upload = require("../middleware/uploadMiddleware");
 
 // 디버깅: 라우트가 실행되는지 확인
-console.log("📌 [DEBUG] postRoutes.js 라우트 실행됨");
+console.log("postRoutes.js 라우트 실행됨");
 
 // 게시글 목록 조회
 router.get("/", postController.getAllPosts);
