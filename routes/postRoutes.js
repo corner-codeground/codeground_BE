@@ -1,6 +1,3 @@
-//수정완료
-//2차 수정 필요-완료 
-
 const express = require("express");
 const router = express.Router();
 const postController = require("../controllers/postController"); // ✅ 올바르게 불러오는지 확인

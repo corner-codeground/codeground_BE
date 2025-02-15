@@ -189,9 +189,9 @@ const deletePost = async (req, res) => {
 const searchPost = async (req, res) => {
     try {
         const { keyword } = req.query;
-
+        //키워드가 2글자 이하거나 미입력 시 
         if (!keyword || keyword.length < 2) {
-            return res.status(400).json({ message: "검색어는 최소 2글자 이상 입력해야 합니다." });
+            return res.status(400).json({ message: "최소 2글자 이상의 검색어를 입력해야 합니다." });
         }
 
         console.log("🔍 [검색 요청] 키워드:", keyword);
@@ -213,6 +213,10 @@ const searchPost = async (req, res) => {
             ],
             order: [["createdAt", "DESC"]]
         });
+        //일치하는 게시물이 없을 때때
+        if (!posts || posts.length === 0) {
+            return res.status(404).json({ message: "일치하는 게시물이 없습니다." });
+        }
 
         return res.json(posts);
     } catch (err) {
