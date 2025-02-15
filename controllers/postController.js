@@ -142,7 +142,7 @@ const updatePost = async (req, res) => {
     }
 };
 
-// 📌 5️⃣ 게시글 삭제
+// 📌 5️⃣ 게시글 삭제 
 const deletePost = async (req, res) => {
     const { id } = req.params;
     const user_id = req.user.id;
