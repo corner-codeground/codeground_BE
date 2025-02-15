@@ -9,4 +9,6 @@ router.get("/popular", getPopularPosts);
 // 조회수 증가 API
 router.put("/view/:postId", increaseViewCount);
 
+router.get("/category/:category", getPostsByCategory);
+
 module.exports = router;
