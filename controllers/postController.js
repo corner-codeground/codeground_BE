@@ -4,7 +4,7 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
-// 📌 이미지 업로드 설정
+// 이미지 업로드 설정
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, "uploads/");
@@ -15,14 +15,14 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// ✅ 기존 이미지 삭제 함수
+// 기존 이미지 삭제 함수
 const deleteImage = (imagePath) => {
     if (imagePath && fs.existsSync(imagePath)) {
         fs.unlinkSync(imagePath);
     }
 };
 
-// 📌 1️⃣ 게시글 생성
+// 1. 게시글 생성
 const createPost = async (req, res) => {
     try {
         if (!req.user) {
@@ -51,7 +51,7 @@ const createPost = async (req, res) => {
     }
 };
 
-// 📌 2️⃣ 전체 게시글 조회
+// 2. 전체 게시글 조회
 const getAllPosts = async (req, res) => {
     try {
         const posts = await db.Post.findAll({
@@ -69,7 +69,7 @@ const getAllPosts = async (req, res) => {
     }
 };
 
-// 📌 3️⃣ 게시글 상세 조회
+// 3. 게시글 상세 조회
 const getPostDetail = async (req, res) => {
     const { id } = req.params;
     const user_id = req.user ? req.user.id : null;
@@ -103,7 +103,7 @@ const getPostDetail = async (req, res) => {
     }
 };
 
-// 📌 4️⃣ 게시글 수정
+// 4. 게시글 수정
 const updatePost = async (req, res) => {
     const { id } = req.params;
     const { title, content, removeImage } = req.body;
@@ -142,7 +142,7 @@ const updatePost = async (req, res) => {
     }
 };
 
-// 📌 5️⃣ 게시글 삭제
+// 5. 게시글 삭제
 const deletePost = async (req, res) => {
     const { id } = req.params;
     const user_id = req.user.id;
@@ -170,7 +170,7 @@ const deletePost = async (req, res) => {
     }
 };
 
-// 📌 6️⃣ 게시글 검색
+// 6. 게시글 검색
 const searchPost = async (req, res) => {
     try {
         const { keyword } = req.query;
@@ -201,7 +201,7 @@ const searchPost = async (req, res) => {
     }
 };
 
-// ✅ 최종 export
+// 최종 export
 module.exports = {
     upload,
     createPost,
@@ -211,3 +211,4 @@ module.exports = {
     deletePost,
     searchPost,
 };
+
