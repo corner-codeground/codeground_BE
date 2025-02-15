@@ -41,7 +41,7 @@ class Community extends Sequelize.Model {
           defaultValue: 0,
         },
         hashtags: {
-          type: DataTypes.STRING, // 해시태그를 문자열로 저장 (예: "#example, #nodejs")
+          type: DataTypes.STRING,
           allowNull: false,
           validate: {
             notEmpty: {
@@ -49,16 +49,18 @@ class Community extends Sequelize.Model {
             },
           },
         },
+        category: {
+          // 추가된 필드
+          type: DataTypes.STRING,
+          allowNull: false,
+        },
       },
       {
-        sequelize, // 모델에 sequelize 인스턴스를 연결
-        tableName: "communities", // MySQL에서 사용할 테이블명
-        timestamps: true, // createdAt, updatedAt 자동 추가
-      },
-      {
+        community
+        sequelize,
         tableName: "communities",
         timestamps: true,
-        paranoid: true,
+
       }
     );
   }
