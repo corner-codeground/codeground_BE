@@ -4,7 +4,7 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
-// 📌 이미지 업로드 설정 (multer 사용)
+// 📌 이미지 업로드 설정
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, "uploads/");
@@ -22,7 +22,7 @@ const deleteImage = (imagePath) => {
     }
 };
 
-// 📌 1️⃣ 게시글 생성 (로그인 필요)
+// 📌 1️⃣ 게시글 생성
 const createPost = async (req, res) => {
     try {
         if (!req.user) {
@@ -30,13 +30,11 @@ const createPost = async (req, res) => {
         }
         const user_id = req.user.id;
         const { title, content, is_public, hashtags } = req.body;
-        const image_url = req.file ? `/uploads/${req.file.filename}` : null; // 이미지 URL 저장
-        
+        const image_url = req.file ? `/uploads/${req.file.filename}` : null;
+
         if (!title || !content || !hashtags || hashtags.length === 0) {
             return res.status(400).json({ message: "제목, 내용, 해시태그는 필수 입력 항목입니다." });
         }
-
-        console.log("✅ [게시글 생성] 요청된 user_id:", user_id);
 
         const newPost = await db.Post.create({ title, content, is_public, user_id, image_url });
 
@@ -53,7 +51,7 @@ const createPost = async (req, res) => {
     }
 };
 
-// 📌 2️⃣ 전체 게시글 조회 (목록)
+// 📌 2️⃣ 전체 게시글 조회
 const getAllPosts = async (req, res) => {
     try {
         const posts = await db.Post.findAll({
@@ -64,30 +62,17 @@ const getAllPosts = async (req, res) => {
             order: [["createdAt", "DESC"]]
         });
 
-        if (!posts || posts.length === 0) {
-            return res.json([]); // ✅ 404 대신 빈 배열 반환
-        }
-        
-
-        // ✅ 프론트엔드에서 제목 클릭 후 상세 페이지 이동 가능하도록 ID 포함
-        const formattedPosts = posts.map(post => ({
-            id: post.id,
-            title: post.title,
-            user: post.User.username,
-            createdAt: post.createdAt,
-        }));
-
-        res.json(formattedPosts);
+        res.json(posts);
     } catch (err) {
         console.error("게시글 목록 조회 오류:", err);
         res.status(500).json({ message: "서버 오류" });
     }
 };
 
-// 📌 3️⃣ 게시글 상세 조회 (제목 클릭 시 내용 표시)
+// 📌 3️⃣ 게시글 상세 조회
 const getPostDetail = async (req, res) => {
     const { id } = req.params;
-    const user_id = req.user ? req.user.id : null; // 로그인한 사용자 정보
+    const user_id = req.user ? req.user.id : null;
 
     try {
         const post = await db.Post.findByPk(id, {
@@ -101,7 +86,6 @@ const getPostDetail = async (req, res) => {
             return res.status(404).json({ message: "게시글을 찾을 수 없습니다." });
         }
 
-        // ✅ 본인 게시글 여부 확인 (버튼 표시 여부 결정)
         const isOwner = user_id && String(post.user_id) === String(user_id);
 
         res.json({
@@ -111,7 +95,7 @@ const getPostDetail = async (req, res) => {
             user: post.User.username,
             image_url: post.image_url,
             createdAt: post.createdAt,
-            isOwner, // 프론트에서 이 값으로 수정/삭제 버튼을 표시할지 결정
+            isOwner,
         });
     } catch (err) {
         console.error("게시글 검색 오류:", err);
@@ -119,7 +103,7 @@ const getPostDetail = async (req, res) => {
     }
 };
 
-// 📌 4️⃣ 게시글 수정 (본인만 가능)
+// 📌 4️⃣ 게시글 수정
 const updatePost = async (req, res) => {
     const { id } = req.params;
     const { title, content, removeImage } = req.body;
@@ -158,7 +142,7 @@ const updatePost = async (req, res) => {
     }
 };
 
-// 📌 5️⃣ 게시글 삭제 (본인만 가능)
+// 📌 5️⃣ 게시글 삭제
 const deletePost = async (req, res) => {
     const { id } = req.params;
     const user_id = req.user.id;
@@ -185,7 +169,8 @@ const deletePost = async (req, res) => {
         res.status(500).json({ message: "서버 오류 발생" });
     }
 };
-// 📌 6️⃣ 게시글 검색 (부분 일치 검색)
+
+// 📌 6️⃣ 게시글 검색
 const searchPost = async (req, res) => {
     try {
         const { keyword } = req.query;
@@ -194,8 +179,6 @@ const searchPost = async (req, res) => {
             return res.status(400).json({ message: "최소 2글자 이상의 검색어를 입력해야 합니다." });
         }
 
-        console.log("🔍 [검색 요청] 키워드:", keyword);
-
         const posts = await db.Post.findAll({
             where: {
                 [Op.or]: [
@@ -203,14 +186,7 @@ const searchPost = async (req, res) => {
                     { content: { [Op.like]: `%${keyword}%` } },
                 ]
             },
-            include: [
-                { model: db.User, attributes: ["id", "username"] },
-                {
-                    model: db.Hashtag,
-                    where: { tag: { [Op.like]: `%${keyword}%` } },
-                    required: false
-                }
-            ],
+            include: [{ model: db.User, attributes: ["id", "username"] }],
             order: [["createdAt", "DESC"]]
         });
         //일치하는 게시물이 없을 때때
@@ -218,14 +194,14 @@ const searchPost = async (req, res) => {
             return res.status(404).json({ message: "일치하는 게시물이 없습니다." });
         }
 
-        return res.json(posts);
+        res.json(posts);
     } catch (err) {
         console.error("게시글 검색 오류:", err);
         res.status(500).json({ message: "서버 오류" });
     }
 };
 
-// ✅ 올바르게 `module.exports` 설정 (누락된 함수 포함)
+// ✅ 최종 export
 module.exports = {
     upload,
     createPost,
