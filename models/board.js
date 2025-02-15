@@ -1,23 +1,27 @@
-const { DataTypes } = require("sequelize");
-const sequelize = require("../config/config");
+const { Sequelize, DataTypes } = require("sequelize");
 
-const Board = sequelize.define(
-  "Board",
-  {
-    id: {
-      type: DataTypes.INTEGER,
-      autoIncrement: true,
-      primaryKey: true,
-    },
-    name: {
-      type: DataTypes.STRING(100), // 게시판 이름
-      allowNull: false,
-    },
-  },
-  {
-    tableName: "boards",
-    timestamps: false,
+class Board extends Sequelize.Model {
+  static initiate(sequelize) {
+    Board.init(
+      {
+        id: {
+          type: DataTypes.INTEGER,
+          autoIncrement: true,
+          primaryKey: true,
+        },
+        name: {
+          type: DataTypes.STRING(100),
+          allowNull: false,
+        },
+      },
+      {
+        sequelize,
+        tableName: "boards",
+        timestamps: false,
+        modelName: "Board", // 👈 추가
+      }
+    );
   }
-);
+}
 
 module.exports = Board;
