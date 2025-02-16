@@ -27,13 +27,13 @@ class Scrap extends Sequelize.Model {
 
   static associate(db) {
     if (db.User) {
-      db.Scrap.belongsTo(db.User, { foreignKey: 'user_id', targetKey: 'id' });
+      db.Scrap.belongsTo(db.User, { foreignKey: 'user_id', targetKey: 'id', onDelete: "CASCADE" });
     } else {
       console.error('Scrap.associate: db.User가 정의되지 않았습니다.');
     }
   
     if (db.Post) {  // Post 모델이 존재할 때만 연관 관계 추가
-      db.Scrap.belongsTo(db.Post, { foreignKey: 'post_id', targetKey: 'id' });
+      db.Scrap.belongsTo(db.Post, { foreignKey: 'post_id', targetKey: 'id', onDelete: "CASCADE" });
     } else {
       console.warn('Scrap.associate: db.Post가 아직 정의되지 않았음 (임시로 연관 관계 제외)');
     }

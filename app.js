@@ -6,7 +6,7 @@ const path = require("path");
 const dotenv = require("dotenv");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
-const { sequelize } = require("./models");
+const { sequelize, Board } = require("./models");
 
 const authRouter = require("./routes/auth");
 const commentRouter = require("./routes/route_comment");
@@ -14,7 +14,8 @@ const likeRouter = require("./routes/route_like");
 const scrapRouter = require("./routes/route_scrap");
 const followRouter = require("./routes/route_follow");
 const postRouter = require("./routes/postRoutes");
-const runCodeRouter = require('./routes/route_runCode')
+const runCodeRouter = require("./routes/route_runCode");
+const boardRouter = require("./routes/route_board");
 
 dotenv.config();
 const app = express();
@@ -83,6 +84,7 @@ app.use("/scraps", scrapRouter);
 app.use("/follow", followRouter);
 app.use("/posts", postRouter);
 app.use("/runCodes", runCodeRouter);
+app.use("/boards", boardRouter);
 
 // 홈 화면
 app.get("/", (req, res) => {
@@ -90,17 +92,27 @@ app.get("/", (req, res) => {
 });
 
 // MySQL 연결 후 서버 실행
-sequelize
-  .sync()
-  .then(() => {
+const startServer = async () => {
+  try {
+    await sequelize.sync();
     console.log("데이터베이스 연결 성공");
-  })
-  .catch((err) => {
-    console.error("데이터베이스 연결 오류", err);
-  });
 
-// 서버 실행
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`서버가 ${PORT}번 포트에서 실행 중입니다.`);
-});
+    // Board 기본 데이터 추가
+    if (sequelize.models.Board) {
+      await sequelize.models.Board.seedDefaultBoards();
+      console.log("기본 게시판 데이터 추가 완료");
+    } else {
+      console.error("Board 모델이 로드되지 않았습니다.");
+    }
+
+    // 서버 실행
+    const PORT = process.env.PORT || 5000;
+    app.listen(PORT, () => {
+      console.log(`서버가 ${PORT}번 포트에서 실행 중입니다.`);
+    });
+  } catch (err) {
+    console.error("데이터베이스 연결 오류:", err);
+  }
+};
+
+startServer();

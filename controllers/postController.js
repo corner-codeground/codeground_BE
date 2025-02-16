@@ -22,41 +22,63 @@ const deleteImage = (imagePath) => {
     }
 };
 
-// 1. 게시글 생성
+// 게시글 생성 (게시판별 글쓰기)
 const createPost = async (req, res) => {
     try {
         if (!req.user) {
             return res.status(403).json({ message: "로그인이 필요합니다." });
         }
         const user_id = req.user.id;
-        const { title, content, is_public, hashtags } = req.body;
+        const { title, content, is_public, hashtags, board_id } = req.body;
         const image_url = req.file ? `/uploads/${req.file.filename}` : null;
 
-        if (!title || !content || !hashtags || hashtags.length === 0) {
-            return res.status(400).json({ message: "제목, 내용, 해시태그는 필수 입력 항목입니다." });
+        if (!title || !content || !board_id) {
+            return res.status(400).json({ message: "제목, 내용, 게시판 ID는 필수 입력 항목입니다." });
         }
 
-        const newPost = await db.Post.create({ title, content, is_public, user_id, image_url });
+        // 존재하는 게시판인지 확인
+        const board = await db.Board.findByPk(board_id);
+        if (!board) {
+            return res.status(400).json({ message: "존재하지 않는 게시판입니다." });
+        }
+
+        // 게시글 생성
+        const newPost = await db.Post.create({ 
+            title, 
+            content, 
+            is_public, 
+            user_id, 
+            image_url, 
+            board_id 
+        });
 
         // 해시태그 연결
-        const tagInstances = await Promise.all(
-            hashtags.map(tag => db.Hashtag.findOrCreate({ where: { tag } }))
-        );
-        await newPost.addHashtags(tagInstances.map(t => t[0]));
+        if (hashtags && hashtags.length > 0) {
+            const tagInstances = await Promise.all(
+                hashtags.map(tag => db.Hashtag.findOrCreate({ where: { tag } }))
+            );
+            await newPost.addHashtags(tagInstances.map(t => t[0]));
+        }
 
         res.status(201).json({ message: "게시글이 등록되었습니다.", post: newPost });
     } catch (err) {
         console.error("게시글 생성 오류:", err);
-        res.status(500).json({ message: "서버 내부 오류 발생", error: err.toString() });
+        res.status(500).json({ message: "서버 내부 오류 발생" });
     }
 };
 
-// 전체 게시글 조회
+// 전체 게시글 조회 (게시판별 필터 추가)
 const getAllPosts = async (req, res) => {
     try {
+        const { board_id } = req.query; // 특정 게시판 필터링 옵션
+
+        const filter = board_id ? { board_id } : {}; 
+
         const posts = await db.Post.findAll({
+            where: filter,
             include: [
                 { model: db.User, attributes: ["id", "username"] },
+                { model: db.Board, attributes: ["id", "name"] },
                 { model: db.Hashtag, attributes: ["tag"] }
             ],
             order: [["createdAt", "DESC"]]
@@ -69,7 +91,7 @@ const getAllPosts = async (req, res) => {
     }
 };
 
-// 3. 게시글 상세 조회
+// 게시글 상세 조회 (게시판 정보 포함)
 const getPostDetail = async (req, res) => {
     const { id } = req.params;
     const user_id = req.user ? req.user.id : null;
@@ -78,6 +100,7 @@ const getPostDetail = async (req, res) => {
         const post = await db.Post.findByPk(id, {
             include: [
                 { model: db.User, attributes: ["id", "username"] },
+                { model: db.Board, attributes: ["id", "name"] },
                 { model: db.Hashtag, attributes: ["tag"] }
             ]
         });
@@ -93,6 +116,7 @@ const getPostDetail = async (req, res) => {
             title: post.title,
             content: post.content,
             user: post.User.username,
+            board: post.Board.name,
             image_url: post.image_url,
             createdAt: post.createdAt,
             isOwner,
@@ -103,7 +127,43 @@ const getPostDetail = async (req, res) => {
     }
 };
 
-// 4. 게시글 수정
+// 게시글 검색 (게시판 필터 추가)
+const searchPost = async (req, res) => {
+    try {
+        const { keyword, board_id } = req.query;
+
+        if (!keyword || keyword.length < 2) {
+            return res.status(400).json({ message: "최소 2글자 이상의 검색어를 입력해야 합니다." });
+        }
+
+        const filter = {
+            [Op.or]: [
+                { title: { [Op.like]: `%${keyword}%` } },
+                { content: { [Op.like]: `%${keyword}%` } },
+            ]
+        };
+
+        if (board_id) {
+            filter.board_id = board_id; 
+        }
+
+        const posts = await db.Post.findAll({
+            where: filter,
+            include: [
+                { model: db.User, attributes: ["id", "username"] },
+                { model: db.Board, attributes: ["id", "name"] }
+            ],
+            order: [["createdAt", "DESC"]]
+        });
+
+        res.json(posts);
+    } catch (err) {
+        console.error("게시글 검색 오류:", err);
+        res.status(500).json({ message: "서버 오류" });
+    }
+};
+
+// 게시글 수정
 const updatePost = async (req, res) => {
     const { id } = req.params;
     const { title, content, removeImage } = req.body;
@@ -142,7 +202,7 @@ const updatePost = async (req, res) => {
     }
 };
 
-// 5. 게시글 삭제
+// 게시글 삭제
 const deletePost = async (req, res) => {
     const { id } = req.params;
     const user_id = req.user.id;
@@ -157,10 +217,6 @@ const deletePost = async (req, res) => {
             return res.status(403).json({ message: "삭제 권한이 없습니다." });
         }
 
-        if (post.image_url) {
-            deleteImage(`.${post.image_url}`);
-        }
-
         await post.destroy();
         res.json({ message: "게시글이 삭제되었습니다." });
 
@@ -170,45 +226,35 @@ const deletePost = async (req, res) => {
     }
 };
 
-// 6. 게시글 검색
-const searchPost = async (req, res) => {
+//특정 게시판에 게시글 추가
+const createPostInBoard = async ({ title, content, boardId, user_id }) => {
     try {
-        const { keyword } = req.query;
-        //키워드가 2글자 이하거나 미입력 시 
-        if (!keyword || keyword.length < 2) {
-            return res.status(400).json({ message: "최소 2글자 이상의 검색어를 입력해야 합니다." });
+        const board = await db.Board.findByPk(boardId);
+        if (!board) {
+            throw new Error("존재하지 않는 게시판입니다.");
         }
 
-        const posts = await db.Post.findAll({
-            where: {
-                [Op.or]: [
-                    { title: { [Op.like]: `%${keyword}%` } },
-                    { content: { [Op.like]: `%${keyword}%` } },
-                ]
-            },
-            include: [{ model: db.User, attributes: ["id", "username"] }],
-            order: [["createdAt", "DESC"]]
+        const newPost = await db.Post.create({
+            title,
+            content,
+            board_id: boardId,
+            user_id,
         });
-        //일치하는 게시물이 없을 때때
-        if (!posts || posts.length === 0) {
-            return res.status(404).json({ message: "일치하는 게시물이 없습니다." });
-        }
 
-        res.json(posts);
-    } catch (err) {
-        console.error("게시글 검색 오류:", err);
-        res.status(500).json({ message: "서버 오류" });
+        return newPost;
+    } catch (error) {
+        console.error("게시글 추가 오류:", error);
+        throw error;
     }
 };
 
-// 최종 export
 module.exports = {
-    upload,
+    upload, //제거해도될듯
     createPost,
+    createPostInBoard, // 이 부분 추가
     getAllPosts,
     getPostDetail,
+    searchPost,
     updatePost,
     deletePost,
-    searchPost,
 };
-

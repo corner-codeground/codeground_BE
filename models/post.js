@@ -1,4 +1,6 @@
+// models/post.js
 const Sequelize = require("sequelize");
+const { DataTypes, Model } = require("sequelize");
 
 class Post extends Sequelize.Model {
   static initiate(sequelize) {
@@ -17,8 +19,16 @@ class Post extends Sequelize.Model {
           type: Sequelize.TEXT,
           allowNull: false,
         },
+        board_id: { // ✅ category 대신 board_id 사용
+          type: DataTypes.INTEGER,
+          allowNull: false,
+          references: {
+            model: "boards", // ✅ boards 테이블 참조
+            key: "id",
+          },
+        },
         image_url: {
-          type: Sequelize.STRING, // 이미지 경로를 저장하는 필드 추가
+          type: Sequelize.STRING,
           allowNull: true,
         },
         is_public: {
@@ -29,11 +39,11 @@ class Post extends Sequelize.Model {
       },
       {
         sequelize,
-        timestamps: true, // created_at, updated_at 자동 추가
-        underscored: true, // createdAt -> created_at 스타일 적용
+        timestamps: true,
+        underscored: true,
         modelName: "Post",
         tableName: "post",
-        paranoid: true, // soft delete 지원 (deleted_at 사용)
+        paranoid: true,
         charset: "utf8",
         collate: "utf8_general_ci",
       }
@@ -58,4 +68,5 @@ class Post extends Sequelize.Model {
     }
   }
 }
+
 module.exports = Post;
