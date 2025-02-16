@@ -22,7 +22,7 @@ const deleteImage = (imagePath) => {
     }
 };
 
-// 게시글 생성 (게시판별 글쓰기)
+// ✅ 1️⃣ 게시글 생성 (게시판별 글쓰기)
 const createPost = async (req, res) => {
     try {
         if (!req.user) {
@@ -36,13 +36,13 @@ const createPost = async (req, res) => {
             return res.status(400).json({ message: "제목, 내용, 게시판 ID는 필수 입력 항목입니다." });
         }
 
-        // 존재하는 게시판인지 확인
+        // ✅ 존재하는 게시판인지 확인
         const board = await db.Board.findByPk(board_id);
         if (!board) {
             return res.status(400).json({ message: "존재하지 않는 게시판입니다." });
         }
 
-        // 게시글 생성
+        // ✅ 게시글 생성
         const newPost = await db.Post.create({ 
             title, 
             content, 
@@ -52,7 +52,7 @@ const createPost = async (req, res) => {
             board_id 
         });
 
-        // 해시태그 연결
+        // ✅ 해시태그 연결
         if (hashtags && hashtags.length > 0) {
             const tagInstances = await Promise.all(
                 hashtags.map(tag => db.Hashtag.findOrCreate({ where: { tag } }))
@@ -67,7 +67,7 @@ const createPost = async (req, res) => {
     }
 };
 
-// 전체 게시글 조회 (게시판별 필터 추가)
+// ✅ 2️⃣ 전체 게시글 조회 (게시판별 필터 추가)
 const getAllPosts = async (req, res) => {
     try {
         const { board_id } = req.query; // 특정 게시판 필터링 옵션
@@ -91,7 +91,7 @@ const getAllPosts = async (req, res) => {
     }
 };
 
-// 게시글 상세 조회 (게시판 정보 포함)
+// ✅ 3️⃣ 게시글 상세 조회 (게시판 정보 포함)
 const getPostDetail = async (req, res) => {
     const { id } = req.params;
     const user_id = req.user ? req.user.id : null;
@@ -127,7 +127,7 @@ const getPostDetail = async (req, res) => {
     }
 };
 
-// 게시글 검색 (게시판 필터 추가)
+// ✅ 4️⃣ 게시글 검색 (게시판 필터 추가)
 const searchPost = async (req, res) => {
     try {
         const { keyword, board_id } = req.query;
@@ -163,7 +163,7 @@ const searchPost = async (req, res) => {
     }
 };
 
-// 게시글 수정
+// ✅ 5️⃣ 게시글 수정
 const updatePost = async (req, res) => {
     const { id } = req.params;
     const { title, content, removeImage } = req.body;
@@ -202,7 +202,7 @@ const updatePost = async (req, res) => {
     }
 };
 
-// 게시글 삭제
+// ✅ 6️⃣ 게시글 삭제
 const deletePost = async (req, res) => {
     const { id } = req.params;
     const user_id = req.user.id;
@@ -226,7 +226,7 @@ const deletePost = async (req, res) => {
     }
 };
 
-//특정 게시판에 게시글 추가
+// ✅ 특정 게시판에 게시글 추가
 const createPostInBoard = async ({ title, content, boardId, user_id }) => {
     try {
         const board = await db.Board.findByPk(boardId);
@@ -243,7 +243,7 @@ const createPostInBoard = async ({ title, content, boardId, user_id }) => {
 
         return newPost;
     } catch (error) {
-        console.error("게시글 추가 오류:", error);
+        console.error("❌ 게시글 추가 오류:", error);
         throw error;
     }
 };
@@ -251,7 +251,7 @@ const createPostInBoard = async ({ title, content, boardId, user_id }) => {
 module.exports = {
     upload, //제거해도될듯
     createPost,
-    createPostInBoard, // 이 부분 추가
+    createPostInBoard, // ⬅️ 이 부분 추가
     getAllPosts,
     getPostDetail,
     searchPost,

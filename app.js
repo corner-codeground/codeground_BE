@@ -31,7 +31,7 @@ app.set("views", path.join(__dirname, "views"));
 // CORS 설정 추가
 app.use(
   cors({
-    origin: "http://127.0.0.1:5500", // 프론트엔드 실행 주소 (Live Server)
+    origin: "http://localhost:3000/", // 프론트엔드 실행 주소 (Live Server)
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -92,27 +92,29 @@ app.get("/", (req, res) => {
 });
 
 // MySQL 연결 후 서버 실행
-const startServer = async () => {
-  try {
-    await sequelize.sync();
+sequelize
+  .sync()
+  .then( async() => {
     console.log("데이터베이스 연결 성공");
 
-    // Board 기본 데이터 추가
+    // ✅ Board 기본 데이터 추가
     if (sequelize.models.Board) {
       await sequelize.models.Board.seedDefaultBoards();
-      console.log("기본 게시판 데이터 추가 완료");
+      console.log("✅ 기본 게시판 데이터 추가 완료");
     } else {
-      console.error("Board 모델이 로드되지 않았습니다.");
+      console.error("❌ Board 모델이 로드되지 않았습니다.");
     }
+  })
+  .catch((err) => {
+    console.error("데이터베이스 연결 오류", err);
+  });
 
-    // 서버 실행
-    const PORT = process.env.PORT || 5000;
-    app.listen(PORT, () => {
-      console.log(`서버가 ${PORT}번 포트에서 실행 중입니다.`);
-    });
-  } catch (err) {
-    console.error("데이터베이스 연결 오류:", err);
-  }
-};
+app.post("/auth/join", (req, res) => {
+  res.send("회원가입 성공");
+});
 
-startServer();
+// 서버 실행
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`서버가 ${PORT}번 포트에서 실행 중입니다.`);
+});

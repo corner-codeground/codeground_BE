@@ -1,6 +1,4 @@
-// models/post.js
 const Sequelize = require("sequelize");
-const { DataTypes, Model } = require("sequelize");
 
 class Post extends Sequelize.Model {
   static initiate(sequelize) {
@@ -19,16 +17,17 @@ class Post extends Sequelize.Model {
           type: Sequelize.TEXT,
           allowNull: false,
         },
-        board_id: { // ✅ category 대신 board_id 사용
-          type: DataTypes.INTEGER,
+        board_id: {
+          type: Sequelize.INTEGER,
           allowNull: false,
           references: {
-            model: "boards", // ✅ boards 테이블 참조
+            model: "boards",
             key: "id",
           },
+          onDelete: "CASCADE",
         },
         image_url: {
-          type: Sequelize.STRING,
+          type: Sequelize.STRING, // 이미지 경로 저장
           allowNull: true,
         },
         is_public: {
@@ -42,8 +41,8 @@ class Post extends Sequelize.Model {
         timestamps: true,
         underscored: true,
         modelName: "Post",
-        tableName: "post",
-        paranoid: true,
+        tableName: "posts",
+        paranoid: true, // soft delete 지원 (deleted_at 사용)
         charset: "utf8",
         collate: "utf8_general_ci",
       }
@@ -53,6 +52,12 @@ class Post extends Sequelize.Model {
   static associate(db) {
     db.Post.belongsTo(db.User, {
       foreignKey: "user_id",
+      targetKey: "id",
+      onDelete: "CASCADE",
+    });
+
+    db.Post.belongsTo(db.Board, {
+      foreignKey: "board_id",
       targetKey: "id",
       onDelete: "CASCADE",
     });

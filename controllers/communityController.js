@@ -1,11 +1,11 @@
-const Post = require("../models/post");
+const Community = require("../models/community");
 
-// 인기 게시글 조회 (좋아요 & 조회수 순 정렬, 상위 10개)
+// 🔹 전체 인기 게시글 조회
 exports.getPopularPosts = async (req, res) => {
   try {
-    const popularPosts = await Post.findAll({
+    const popularPosts = await Community.findAll({
       order: [
-        ["likes", "DESC"],     // 좋아요 순 정렬
+        ["likes", "DESC"], // 좋아요 순 정렬
         ["viewCount", "DESC"], // 조회수 순 정렬
       ],
       limit: 10, // 상위 10개 인기글만 반환
@@ -13,16 +13,35 @@ exports.getPopularPosts = async (req, res) => {
 
     res.status(200).json({ success: true, data: popularPosts });
   } catch (error) {
-    console.error("인기 게시글 조회 오류:", error);
     res.status(500).json({ success: false, message: "서버 오류" });
   }
 };
 
-// 특정 게시글 조회수 증가 (`postId` 기준)
+// 🔹 특정 게시판의 인기 게시글 조회 (boardId 기준)
+exports.getPopularPostsByBoard = async (req, res) => {
+  const { boardId } = req.params; // URL에서 boardId 가져오기
+
+  try {
+    const popularPosts = await Community.findAll({
+      where: { boardId }, // 특정 게시판에서 조회
+      order: [
+        ["likes", "DESC"], // 좋아요 순 정렬
+        ["viewCount", "DESC"], // 조회수 순 정렬
+      ],
+      limit: 10, // 상위 10개 인기글만 반환
+    });
+
+    res.status(200).json({ success: true, data: popularPosts });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "서버 오류" });
+  }
+};
+
+// 🔹 조회수 증가 API (기존 코드 유지)
 exports.increaseViewCount = async (req, res) => {
   const { postId } = req.params;
   try {
-    const post = await Post.findByPk(postId);
+    const post = await Community.findByPk(postId);
     if (!post) {
       return res.status(404).json({ success: false, message: "게시글이 없습니다." });
     }
@@ -33,32 +52,6 @@ exports.increaseViewCount = async (req, res) => {
 
     res.status(200).json({ success: true, data: post });
   } catch (error) {
-    console.error("조회수 증가 오류:", error);
-    res.status(500).json({ success: false, message: "서버 오류" });
-  }
-};
-
-// 특정 카테고리에서 인기 게시글 조회 (`GET /community/popular?category=프론트엔드`)
-exports.getPopularPostsByCategory = async (req, res) => {
-  try {
-    const { category } = req.query;
-
-    if (!category) {
-      return res.status(400).json({ success: false, message: "카테고리를 입력하세요." });
-    }
-
-    const popularPosts = await Post.findAll({
-      where: { category },
-      order: [
-        ["likes", "DESC"],     // 좋아요 순 정렬
-        ["viewCount", "DESC"], // 조회수 순 정렬
-      ],
-      limit: 10, // 상위 10개 인기글만 반환
-    });
-
-    res.status(200).json({ success: true, data: popularPosts });
-  } catch (error) {
-    console.error("카테고리별 인기 게시글 조회 오류:", error);
     res.status(500).json({ success: false, message: "서버 오류" });
   }
 };
