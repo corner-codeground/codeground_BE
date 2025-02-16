@@ -17,8 +17,17 @@ class Post extends Sequelize.Model {
           type: Sequelize.TEXT,
           allowNull: false,
         },
+        board_id: {
+          type: Sequelize.INTEGER,
+          allowNull: false,
+          references: {
+            model: "boards",
+            key: "id",
+          },
+          onDelete: "CASCADE",
+        },
         image_url: {
-          type: Sequelize.STRING, // 이미지 경로를 저장하는 필드 추가
+          type: Sequelize.STRING, // 이미지 경로 저장
           allowNull: true,
         },
         is_public: {
@@ -29,10 +38,10 @@ class Post extends Sequelize.Model {
       },
       {
         sequelize,
-        timestamps: true, // created_at, updated_at 자동 추가
-        underscored: true, // createdAt -> created_at 스타일 적용
+        timestamps: true,
+        underscored: true,
         modelName: "Post",
-        tableName: "post",
+        tableName: "posts",
         paranoid: true, // soft delete 지원 (deleted_at 사용)
         charset: "utf8",
         collate: "utf8_general_ci",
@@ -43,6 +52,12 @@ class Post extends Sequelize.Model {
   static associate(db) {
     db.Post.belongsTo(db.User, {
       foreignKey: "user_id",
+      targetKey: "id",
+      onDelete: "CASCADE",
+    });
+
+    db.Post.belongsTo(db.Board, {
+      foreignKey: "board_id",
       targetKey: "id",
       onDelete: "CASCADE",
     });
@@ -58,4 +73,5 @@ class Post extends Sequelize.Model {
     }
   }
 }
+
 module.exports = Post;
