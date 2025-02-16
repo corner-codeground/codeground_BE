@@ -29,6 +29,7 @@ class Board extends Sequelize.Model {
 
   static associate(db) {
     db.Board.hasMany(db.Post, { foreignKey: "board_id", sourceKey: "id", onDelete: "CASCADE" });
+    db.Post.belongsTo(db.Board, { foreignKey: "board_id", targetKey: "id", onDelete: "CASCADE" }); // ✅ 추가
   }
 
   static async seedDefaultBoards() {

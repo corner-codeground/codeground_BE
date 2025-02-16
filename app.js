@@ -16,6 +16,7 @@ const followRouter = require("./routes/route_follow");
 const postRouter = require("./routes/postRoutes");
 const runCodeRouter = require("./routes/route_runCode");
 const boardRouter = require("./routes/route_board");
+const trendingPostRouter = require('./routes/trendingPostRoutes');
 
 dotenv.config();
 const app = express();
@@ -29,9 +30,20 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
 // CORS 설정 추가
+const allowedOrigins = [
+  "http://localhost:3000",  // React 개발 서버
+  "http://127.0.0.1:5500",  // Live Server 실행 주소
+];
+
 app.use(
   cors({
-    origin: "http://localhost:3000/", // 프론트엔드 실행 주소 (Live Server)
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("CORS 정책 위반"));
+      }
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -85,6 +97,7 @@ app.use("/follow", followRouter);
 app.use("/posts", postRouter);
 app.use("/runCodes", runCodeRouter);
 app.use("/boards", boardRouter);
+app.use("/trending", trendingPostRouter);
 
 // 홈 화면
 app.get("/", (req, res) => {

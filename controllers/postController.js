@@ -248,6 +248,28 @@ const createPostInBoard = async ({ title, content, boardId, user_id }) => {
     }
 };
 
+// ✅ 조회수 증가 API
+const increaseViewCount = async (req, res) => {
+    try {
+        const { postId } = req.params;
+
+        // 게시글 찾기
+        const post = await db.Post.findByPk(postId);
+        if (!post) {
+            return res.status(404).json({ message: "게시글을 찾을 수 없습니다." });
+        }
+
+        // 조회수 증가
+        post.view_count = (post.view_count || 0) + 1;
+        await post.save();
+
+        res.json({ message: "조회수가 증가되었습니다.", viewCount: post.view_count });
+    } catch (err) {
+        console.error("조회수 증가 오류:", err);
+        res.status(500).json({ message: "서버 오류 발생" });
+    }
+};
+
 module.exports = {
     upload, //제거해도될듯
     createPost,
@@ -257,4 +279,5 @@ module.exports = {
     searchPost,
     updatePost,
     deletePost,
+    increaseViewCount, 
 };
