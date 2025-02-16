@@ -25,6 +25,8 @@ const startServer = (port) => {
         const testPost = await Community.create({
           title: "테스트 게시글",
           content: "이건 테스트 데이터입니다.",
+          boardId: 2,
+          category: "백엔드",
           viewCount: 0,
           likes: 0,
           hashtags: "#테스트, #nodejs",
@@ -53,4 +55,3 @@ const startServer = (port) => {
 
 // 서버 실행
 startServer(PORT);
-
